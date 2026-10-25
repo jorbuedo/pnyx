@@ -1,0 +1,3 @@
+[submodule "vendor/evolution-sdk"]
+	path = vendor/evolution-sdk
+	url = https://github.com/jorbuedo/evolution-sdk.git

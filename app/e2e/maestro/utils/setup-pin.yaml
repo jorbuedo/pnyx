@@ -1,0 +1,55 @@
+# Utility: Set up PIN code (mobile only)
+#
+# Creates a new 6-digit PIN during app initialization.
+# Enters the PIN twice (create + confirm).
+#
+# Uses randomly generated 6-digit PIN for each test run.
+#
+# Prerequisites:
+# - Must be on the PIN setup screen (/init/pin-setup)
+#
+# Note: PIN setup now happens in the init flow after analytics consent,
+# before biometric setup and the new-or-return choice.
+
+appId: ${MAESTRO_APP_ID}
+---
+
+# Generate random 6-digit PIN (each digit 0-9)
+- evalScript: |
+    ${
+      const pin = Array.from({ length: 6 }, () => Math.floor(Math.random() * 10).toString()).join('');
+      output.PIN = pin;
+      output.PIN_DIGITS = pin.split('');
+    }
+
+# Wait for PIN setup screen
+- extendedWaitUntil:
+    visible:
+      text: "Create PIN code"
+    timeout: 10000
+
+# Enter PIN (tap each digit)
+- evalScript: ${output.digitIndex = 0}
+- repeat:
+    times: 6
+    commands:
+      - tapOn: ${output.PIN_DIGITS[output.digitIndex]}
+      - evalScript: ${output.digitIndex = output.digitIndex + 1}
+
+# Wait for confirm screen
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "Confirm PIN code"
+    timeout: 5000
+
+# Confirm PIN (tap same digits again)
+- evalScript: ${output.digitIndex = 0}
+- repeat:
+    times: 6
+    commands:
+      - tapOn: ${output.PIN_DIGITS[output.digitIndex]}
+      - evalScript: ${output.digitIndex = output.digitIndex + 1}
+
+# Wait for PIN to be processed
+- waitForAnimationToEnd

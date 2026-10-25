@@ -1,0 +1,138 @@
+// Copy to `wrangler.jsonc` and fill in your own ids before deploying.
+//
+// `database_id` is the only value that MUST change: create the database with
+// `wrangler d1 create pnyx-content` and paste the id it prints. The hostnames in `routes` and
+// `vars` are the reference deployment's; point them at your own.
+{
+  // Cloudflare Worker deployment of the Pnyx content service (CF migration phase 2).
+  // Content plane on D1; identity-row auth (jose) with a stable JWT key from the JWT_PRIVATE_KEY
+  // secret; D1-backed nonces; dry-run push. Chain stays local (/chain/* tunneled).
+  // Artifacts (R2) and real FCM are follow-ups.
+  "name": "pnyx-content",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-07-18",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "routes": [{ "pattern": "pnyx.pxkq.uk", "custom_domain": true }],
+  // The retention sweep (src/worker.ts `scheduled`, windows in src/dm-retention.ts).
+  //
+  // ⚠️ **The first scheduled work this Worker has ever had.** Every deletion in the DM tables until now
+  // was the recipient's or the owner's own act, so an install that never comes back left its rows there
+  // for ever — and a reinstalled one cannot name the key packages it published, so it cannot retire
+  // them. Nothing but a trigger can act for an absent device.
+  //
+  // 04:17 UTC daily: once a day because the shortest window is 7 days, and an odd minute because every
+  // cron on the platform fires on the hour and the minute mark is free throughput. Deploying this
+  // enables the trigger — there is no separate switch — so a `wrangler deploy` is what starts it.
+  "triggers": { "crons": ["17 4 * * *"] },
+  // Static assets (passkey/universal-link association files under /.well-known/*)
+  // are served free from the edge — matching requests never invoke the Worker;
+  // only non-asset paths (the API) hit src/worker.ts. See public/.well-known.
+  "assets": { "directory": "./public" },
+  "vars": {
+    "AUTH_DOMAIN": "pnyx.pxkq.uk",
+    "MIDNIGHT_NETWORK": "preprod",
+    "DEV_AUTH": "0",
+    // Identity-row reads. Login needs `authPub` from the row, which this deployment does with one
+    // indexer query + the wasm decoder in wasm/. The indexer must serve MIDNIGHT_NETWORK's chain.
+    //
+    // ⚠️ **Midnight's own preprod indexer answers 410 Gone** (2026-10-13, `docs/CHAIN_ENDPOINTS.md`);
+    // Blockfrost serves it instead and needs a key. The key is a **separate secret sent as a
+    // `project_id` header**, so this URL stays a plain var — a key in the query string would make
+    // the URL itself a credential, and a URL reaches logs, error strings and dApps:
+    //   bunx wrangler secret put MIDNIGHT_INDEXER_PROJECT_ID
+    // Without it every row read 403s, which refuses every login while `/register` keeps working.
+    "MIDNIGHT_INDEXER_URL": "https://midnight-preprod.blockfrost.io/api/v4/graphql",
+    // ⚠️ A code **digest**, not an address (`PNYX_IDENTITY_CONTRACT_ADDRESS`, retired 2026-08-25).
+    // There is one identity contract per identity, at an address derived from `C`, so a login names
+    // its own contract and this is what proves the contract is built from our template — see
+    // `src/identity-contract-check.ts` for why those two facts are sufficient. The value is the
+    // `codeDigest` the artifacts manifest publishes for the build devices prove against, and the same
+    // one the sponsor host is configured with:
+    //   curl -s https://artifacts.pxkq.uk/identity/manifest.json | jq -r .codeDigest
+    "PNYX_IDENTITY_CODE_DIGEST": "0924793ed6b12df97d5cb31cfdbc87820c496f1b500548e17f82501a8e0e8b81",
+    // `circle.compact`'s compile, so a circle deployed from an older one can be reported as such
+    // rather than looking healthy while every proof against it is refused.
+    "PNYX_CIRCLE_CODE_DIGEST": "58875eb9b3e339a27c134fa920fce433c0da4fd6536eec0ba6e5809d7155fb3c",
+    // The Cardano read behind the self-service invite attestor. Unset → the `/circles/:id/invite*`
+    // routes are 404, which is the honest state for a deployment that has not chosen an endpoint.
+    //
+    // ⚠️ **Cardano mainnet, whatever Midnight network this deployment is on.** The predicates are
+    // about a person's real stake key — who they delegate to, what they hold — and a preprod
+    // Cardano account is not evidence of any of that. The two axes are independent
+    // (`services/midnight/networks.ts`): a preprod *Midnight* circle still gates on mainnet ADA.
+    //
+    // A var rather than a secret: an endpoint URL is not a credential, and burying it in secrets
+    // makes the deployment harder to read for nothing. Same host `@pnyx/cardano-effect` already
+    // uses (`effect/src/params.ts`), so there is one Koios in the deployment rather than two.
+    "KOIOS_URL": "https://api.koios.rest/api/v1"
+  },
+  // Guards POST /register, the one unauthenticated route that spends sponsor DUST. Namespace ids are
+  // per-Worker and arbitrary; the limit is per CF-Connecting-IP (see src/rate-limit.ts).
+  // Live since the sponsor host came up (2026-08-04): /chain/* is forwarded through the tunnel and
+  // /register spends real DUST, so this is load-bearing rather than pre-configured.
+  "ratelimits": [
+    {
+      "name": "REGISTER_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 5, "period": 60 }
+    },
+    // Sponsored value transfers (`ref.kind: 'transfer'` on POST /chain/submit), keyed on the session
+    // subject rather than the IP — src/routes.ts. Its own namespace so a registration burst cannot eat
+    // a sender's budget.
+    //
+    // ⚠️ `period` accepts only 10 or 60 (wrangler rejects anything else), so the 10-per-10-minutes this
+    // route intends is not expressible here. 10 per 60s keeps the intended burst and bounds the
+    // sustained rate at 10× that — coarser than the Node server's window, and the reason the binding is
+    // still worth declaring: without it the Worker falls back to an isolate-local counter, which across
+    // many isolates is not a limit at all. See docs/ABUSE_MITIGATION.md.
+    {
+      "name": "TRANSFER_LIMITER",
+      "namespace_id": "1002",
+      "simple": { "limit": 10, "period": 60 }
+    },
+    // Bug-report uploads, keyed on the claimed signing address (src/routes.ts). Its own namespace
+    // so filing reports cannot eat a sender's transfer budget, and vice versa.
+    {
+      "name": "BUG_REPORT_LIMITER",
+      "namespace_id": "1003",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ],
+  // One realtime hub per identity, holding that identity's open WebSockets (src/realtime-do.ts).
+  // Hibernated while idle, so a connected user does not pin an isolate.
+  //
+  // `McpRelay` is one relay per identity, piping JSON-RPC between an agent (streamable HTTP) and the
+  // wallet (WebSocket). ⚠️ It does NOT hibernate, unlike the hub: it holds in-flight requests in memory
+  // and an eviction between a request and its reply would drop the reply (src/mcp-relay-do.ts).
+  "durable_objects": {
+    "bindings": [
+      { "name": "REALTIME", "class_name": "RealtimeHub" },
+      { "name": "MCP_RELAY", "class_name": "McpRelay" }
+    ]
+  },
+  // `new_sqlite_classes`, not `new_classes`: the SQLite-backed storage backend is what makes Durable
+  // Objects available without a paid plan. The class itself stores nothing — events are signals and a
+  // reconnecting client refetches — but the backend choice is fixed at creation and cannot be changed
+  // later, so getting it wrong here would mean a new class name to migrate off.
+  "migrations": [
+    { "tag": "v1-realtime", "new_sqlite_classes": ["RealtimeHub"] },
+    { "tag": "v2-mcp-relay", "new_sqlite_classes": ["McpRelay"] }
+  ],
+  // Bug-report blobs (`reports/<YYYY-MM-DD>/<id>.json.gz`, src/bug-report.ts). Private: nothing
+  // reads these over HTTP, only wrangler/the dashboard, because a report carries a session's whole
+  // log trail and the reporter's own words. No public custom domain, unlike the pnyx-data bucket.
+  //
+  // ⚠️ Create it before deploying with this binding: `wrangler r2 bucket create pnyx-bug-reports`.
+  // An unbound BUG_REPORTS makes POST /bug-report a 404 rather than a 500, which is the honest
+  // state for a deployment that has not provisioned it yet.
+  "r2_buckets": [{ "binding": "BUG_REPORTS", "bucket_name": "pnyx-bug-reports" }],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pnyx-content",
+      "database_id": "YOUR_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

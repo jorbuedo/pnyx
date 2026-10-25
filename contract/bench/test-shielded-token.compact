@@ -1,0 +1,71 @@
+// TEST CONTRACT — not deployed to mainnet, not imported by the app, and not part of the product.
+//
+// It exists because **there is no shielded token on Midnight to test with**. The faucet serves
+// tNIGHT, which is unshielded, and tNIGHT generates tDUST, which is fee-only and non-transferable.
+// `TokenType` is `Unshielded | Shielded | Dust`, and every shielded colour is
+// `tokenType(domainSep, contractAddress)` — so a shielded token exists only because some contract
+// minted it. `payment.compact`'s `buyPermitShielded` therefore cannot be exercised end to end
+// without one of these.
+//
+// Mints and nothing else. Ledger tokens move through Zswap and the wallet, not through this
+// contract, so there is no transfer, no burn and no balance table to keep — and consequently no
+// state that grows with use.
+//
+// Prior art: Moth's `moth-ft` does the same job. This is written against the standard library's own
+// signatures rather than adapted from it, so nothing here carries another project's licence.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+/// The rolling nonce a shielded mint needs.
+///
+/// ⚠️ **A repeated nonce is a repeated coin commitment**, which the ledger rejects — and two coins
+/// that shared one would also be linkable, which is the property the shielded rail exists to
+/// provide. `evolveNonce` over a counter gives a fresh, deterministic, non-repeating value per mint
+/// without the caller having to supply entropy it might reuse.
+///
+/// Both fields take their defaults (`Counter` 0, `Bytes<32>` all-zero), so there is no constructor
+/// and therefore nothing sealed into this contract's address but its own code.
+export ledger nonce: Bytes<32>;
+export ledger mintCount: Counter;
+
+/// The domain separator that colours every token this contract issues. The colour a holder sees is
+/// `tokenType(testDomain(), <this contract's address>)`, so two deploys of this file mint two
+/// different, non-interchangeable tokens.
+export pure circuit testDomain(): Bytes<32> {
+  return pad(32, "pnyx:test-coin");
+}
+
+/// Mint `value` shielded tokens to `recipient`.
+///
+/// ⚠️ **The recipient is `Either<ZswapCoinPublicKey, ContractAddress>` — left is the *user*.** That
+/// is the opposite way round from the unshielded `Either<ContractAddress, UserAddress>` the payment
+/// contract also carries, and the two are structurally identical, so the arms are worth reading
+/// twice every time.
+///
+/// ⚠️ **Whether the recipient can find this coin by scanning is decided off chain, not here.** The
+/// circuit names only a coin public key; the *transaction builder* attaches the ciphertext, and it
+/// can only do that if it knows the recipient's separate encryption key. Mint to a wallet whose full
+/// shielded address the builder holds and an ordinary scan finds the coin; mint to a bare coin
+/// public key it cannot resolve and the returned `ShieldedCoinInfo` is the only record there is.
+/// Returning the coin rather than discarding it is what keeps the second case recoverable.
+export circuit mintShielded(
+  recipient: Either<ZswapCoinPublicKey, ContractAddress>,
+  value: Uint<64>,
+): ShieldedCoinInfo {
+  mintCount.increment(1);
+  nonce = evolveNonce(mintCount.read() as Uint<128>, nonce);
+  return mintShieldedToken(testDomain(), disclose(value), nonce, disclose(recipient));
+}
+
+/// Mint `value` **unshielded** tokens to `recipient`, for the other rail's tests.
+///
+/// No `receiveUnshielded` here: the tokens go to an external recipient, not to this contract, so
+/// there is no self-balance to credit.
+export circuit mintUnshielded(
+  recipient: Either<ContractAddress, UserAddress>,
+  value: Uint<64>,
+): Bytes<32> {
+  return mintUnshieldedToken(testDomain(), disclose(value), disclose(recipient));
+}

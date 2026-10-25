@@ -1,0 +1,18 @@
+-- The circle's on-chain founder: the persona commitment its constructor seated in `moderators`.
+--
+-- **One row per circle, not one per member.** The alternative considered was recording every member's
+-- persona commitment as their `join` confirmed — the only moment the chain proves a subject owns a
+-- leaf. That would have let the content plane link every user's `C` to their on-chain member leaf in
+-- every circle they are in, which is a different object from the persona *label* it already holds, and
+-- one compromise would leak the whole map. Rejected on that ground.
+--
+-- The founder is enough because a circle's moderator set is exactly `{founder}` — `addModerator` has no
+-- caller on any rail, so no second moderator can exist. When moderation ships, the answer is a
+-- contract-side auth key (the way `identity.compact` carries `authPub` for login), not a member-wide
+-- link table here.
+--
+-- ⚠️ Recorded from the creator-only settle route, so a wrong value only misdirects the creator's own
+-- circle. It is checkable rather than merely trusted: a circle's address is a hash over
+-- `(circleId, isOpen, founder)`, so any client with the native rail can re-derive the address from this
+-- leaf and refuse a circle whose two assertions disagree.
+ALTER TABLE circles ADD COLUMN founder_leaf TEXT;

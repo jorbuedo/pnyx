@@ -1,0 +1,49 @@
+{
+  "name": "@pnyx/wallet",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "clean": "rm -rf dist node_modules/.tmp"
+  },
+  "dependencies": {
+    "@evolution-sdk/evolution": "*",
+    "@midnight-ntwrk/ledger-v8": "8.1.2",
+    "@midnight-ntwrk/wallet-sdk-hd": "3.0.3",
+    "@noble/hashes": "2.4.0",
+    "@pnyx/cardano-core": "workspace:*",
+    "@pnyx/config": "workspace:*",
+    "@pnyx/crypto": "workspace:*",
+    "@pnyx/identicon": "workspace:*",
+    "@pnyx/logger": "workspace:*",
+    "@pnyx/midnight-native": "workspace:*",
+    "@pnyx/signer": "workspace:*",
+    "@pnyx/storage": "workspace:*",
+    "@pnyx/store": "workspace:*",
+    "@subsquid/scale-codec": "4.0.1",
+    "effect": "3.21.4"
+  },
+  "devDependencies": {
+    "@effect/vitest": "0.27.0",
+    "@types/node": "25.0.9",
+    "typescript": "~6.0.3",
+    "vitest": "4.1.10"
+  },
+  "peerDependencies": {
+    "react-native-quick-crypto": ">=1.1.5"
+  },
+  "peerDependenciesMeta": {
+    "react-native-quick-crypto": {
+      "optional": true
+    }
+  }
+}

@@ -1,0 +1,27 @@
+-- The invite authority a circle delegated to this deployment.
+--
+-- ⚠️ **This is what replaced the pool.** `0014` shipped a design in which the service could not mint:
+-- `setInvite` is moderator-gated and proving stays on device, so a founder pre-minted invites on their
+-- phone and uploaded the secrets, and a circle that ran dry answered `409` until its founder noticed.
+-- `circle.compact` gained `inviteAuthority` (ledger slot 7) and `issueInvite` on 2026-09-10, and the
+-- sponsor host gained the ability to prove a contract call — so the service now mints one invite per
+-- qualifying claimant, on demand, and holds no unissued codes at all.
+--
+-- The commitment itself is public: it is `inviteAuthorityCommitment(sk)` of a secret derived per circle
+-- on the sponsor host, and the circle stores the same 32 bytes in a public ledger cell. Cached here
+-- rather than re-asked, because a founder needs it to *call* `setInviteAuthority` and the read must not
+-- depend on the sponsor host being reachable at that moment.
+--
+-- ⚠️ NULL means the policy predates delegation, not that delegation was withdrawn — withdrawal is a
+-- contract call (`setInviteAuthority(zero)`), and this column is a cache of what we would use, never
+-- the source of truth for what the circle actually granted. The chain is that.
+ALTER TABLE circle_invite_policies ADD COLUMN authority_commitment TEXT;
+
+-- `circle_invites` keeps its shape and changes meaning: rows are now created at claim time, one per
+-- qualifying wallet, instead of being pre-stocked by a founder. `chain_status` still separates "minted
+-- and settled" from "minted and not yet on chain", which is still the difference between a code that
+-- works and one that fails at `join` with "no such invite".
+--
+-- Rows already in it are pool leftovers: still valid invites on chain, still claimable by whoever holds
+-- them, and simply never dispensed again. They are left in place rather than deleted — the commitments
+-- are on chain and deleting our copy would leave codes nobody could account for.

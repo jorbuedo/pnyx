@@ -1,0 +1,11 @@
+{
+  "name": "cardano-media-pipeline",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@noble/hashes": "1.8.0",
+    "@scure/base": "1.2.6",
+    "effect": "3.21.4",
+    "sharp": "^0.35.3"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "name": "@pnyx/contract-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./bytes": "./src/bytes.ts",
+    "./card": "./src/card.ts",
+    "./circle-derivations": "./src/circle-derivations.ts",
+    "./circle-id": "./src/circle-id.ts",
+    "./circle-invite": "./src/circle-invite.ts",
+    "./circle-simulator": "./src/circle-simulator.ts",
+    "./circle-witnesses": "./src/circle-witnesses.ts",
+    "./dm-conversation": "./src/dm-conversation.ts",
+    "./derivations": "./src/derivations.ts",
+    "./handle": "./src/handle.ts",
+    "./handle-validity": "./src/handle-validity.ts",
+    "./handle-charset": "./src/handle-charset.ts",
+    "./handle-charset-source": "./src/handle-charset-source.ts",
+    "./handle-simulator": "./src/handle-simulator.ts",
+    "./handle-witnesses": "./src/handle-witnesses.ts",
+    "./identity": "./src/identity.ts",
+    "./identity-simulator": "./src/identity-simulator.ts",
+    "./identity-witnesses": "./src/identity-witnesses.ts",
+    "./payment-simulator": "./src/payment-simulator.ts",
+    "./proposal-simulator": "./src/proposal-simulator.ts",
+    "./proposal-witnesses": "./src/proposal-witnesses.ts",
+    "./payment-witnesses": "./src/payment-witnesses.ts",
+    "./persona": "./src/persona.ts"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "0.16.0",
+    "@midnight-ntwrk/ledger-v8": "8.1.2",
+    "@noble/curves": "2.4.0",
+    "@noble/hashes": "2.4.0",
+    "@scure/base": "2.4.0"
+  }
+}

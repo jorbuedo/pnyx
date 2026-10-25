@@ -1,0 +1,99 @@
+# Self-hosted Midnight indexer, one stack per network, pointed at a public node RPC.
+#
+# This is NOT the local standalone stack (infra/standalone), which runs its own dev chain and proof
+# server. Here the node is somebody else's: the indexer needs only a WebSocket RPC to walk the
+# chain. Running our own Midnight node is not a small addition — it refuses to start without a
+# Cardano db-sync Postgres, and with an empty one it rejects every block it is offered
+# ("Main chain state … referenced in imported block … not found"), because a Midnight block is only
+# valid relative to Cardano history. See README.
+#
+# The **cloud** topology, not standalone, deliberately:
+#   - standalone cannot opt out of its SPO task, and that task starved SQLite's single connection
+#     until chain-indexer died every ~50s with "get latest D-parameter: pool timed out while
+#     waiting for an open connection". Throttling APP__SPO__* did not help. Here spo-indexer is
+#     simply not deployed, and nothing we query needs it.
+#   - SQLite serialises ledger-DB-backed queries on one connection, which is a ceiling for an
+#     endpoint meant to serve every wallet.
+#
+# Run:  PNYX_NET=mainnet PNYX_NODE_WS=wss://… podman-compose -f infra/midnight-public/compose.yml up -d
+x-indexer-env: &indexer-env
+  APP__APPLICATION__NETWORK_ID: '${PNYX_NET:?set PNYX_NET to mainnet, preprod or preview}'
+  APP__INFRA__STORAGE__HOST: 'pnyx-pg-${PNYX_NET}'
+  APP__INFRA__STORAGE__PASSWORD: '${PNYX_PG:?set PNYX_PG}'
+  APP__INFRA__PUB_SUB__URL: 'pnyx-nats-${PNYX_NET}:4222'
+  APP__INFRA__PUB_SUB__PASSWORD: '${PNYX_NATS:?set PNYX_NATS}'
+  # Encrypts stored viewing keys. Per host, never in this repo; see README.
+  APP__INFRA__SECRET: '${PNYX_SECRET:?set PNYX_SECRET to 32 random bytes, hex}'
+  APP__TELEMETRY__METRICS__ENABLED: 'true'
+
+services:
+  postgres:
+    container_name: pnyx-pg-${PNYX_NET}
+    image: docker.io/library/postgres:17.1-alpine
+    environment:
+      POSTGRES_USER: 'indexer'
+      POSTGRES_DB: 'indexer'
+      POSTGRES_PASSWORD: '${PNYX_PG}'
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U indexer']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  nats:
+    container_name: pnyx-nats-${PNYX_NET}
+    image: docker.io/library/nats:2.12.3
+    command: ['--user', 'indexer', '--pass', '${PNYX_NATS}', '-js']
+    restart: unless-stopped
+
+  # The single writer. Walks the chain from genesis, re-executing every block through the ledger
+  # library, which is why no node snapshot could ever shorten this.
+  chain-indexer:
+    container_name: pnyx-chain-indexer-${PNYX_NET}
+    # 4.3.800-rc.1 is the ledger-v8 maintenance line (4.3.7 plus GHSA-6746-qxvv-3hwg). NOT 4.4.x:
+    # that is ledger-v9 / node-2.x and does not match our pins. ⚠️ It is a release candidate AHEAD
+    # of the public chains: the support matrix (2026-10-01) puts mainnet and preprod on indexer
+    # 4.3.302 against node 1.0.400. 4.3.302 is the fallback if the rc misbehaves — note a downgrade
+    # may not accept an existing database, so it can cost the whole walk.
+    # ⚠️ The v8 line lacks #1440, so indexer-api can wedge under concurrent dust and merkle-tree
+    # reads. Cap concurrency at the edge and watch /ready.
+    image: docker.io/midnightntwrk/chain-indexer:${PNYX_INDEXER_TAG:-4.3.800-rc.1}
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_started}
+    environment:
+      <<: *indexer-env
+      RUST_LOG: 'chain_indexer=info,indexer_common=info,midnight_ledger=warn,fastrace_opentelemetry=off,warn'
+      APP__INFRA__NODE__URL: '${PNYX_NODE_WS:?set PNYX_NODE_WS to the upstream node WebSocket}'
+    restart: unless-stopped
+
+  wallet-indexer:
+    container_name: pnyx-wallet-indexer-${PNYX_NET}
+    image: docker.io/midnightntwrk/wallet-indexer:${PNYX_INDEXER_TAG:-4.3.800-rc.1}
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_started}
+    environment:
+      <<: *indexer-env
+      RUST_LOG: 'wallet_indexer=info,indexer_common=info,warn'
+    restart: unless-stopped
+
+  indexer-api:
+    container_name: pnyx-indexer-api-${PNYX_NET}
+    image: docker.io/midnightntwrk/indexer-api:${PNYX_INDEXER_TAG:-4.3.800-rc.1}
+    depends_on:
+      postgres: {condition: service_healthy}
+      nats: {condition: service_started}
+    ports:
+      - '127.0.0.1:${PNYX_API_PORT:-8088}:8088'
+    environment:
+      <<: *indexer-env
+      RUST_LOG: 'indexer_api=info,indexer_common=info,warn'
+    restart: unless-stopped
+
+volumes:
+  pg-data:
+    name: pnyx-pg-${PNYX_NET}-data

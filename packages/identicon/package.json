@@ -1,0 +1,27 @@
+{
+  "name": "@pnyx/identicon",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "clean": "rm -rf dist node_modules/.tmp"
+  },
+  "dependencies": {
+    "@multiavatar/multiavatar": "1.0.7",
+    "@noble/hashes": "2.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "25.0.9",
+    "typescript": "~6.0.3",
+    "vitest": "4.1.10"
+  }
+}

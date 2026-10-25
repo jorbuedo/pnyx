@@ -1,0 +1,78 @@
+# Utility: Clear app state and launch fresh
+# Handles Expo dev client connection to Metro server
+# Also handles iOS system dialogs that may appear
+#
+# Used at the start of test flows that require a clean slate
+#
+# Environment variables:
+#   BUILD_TYPE: "standalone" for Maestro Cloud (no Metro), "devclient" for local dev (default)
+
+appId: ${MAESTRO_APP_ID}
+env:
+  BUILD_TYPE: ${BUILD_TYPE}
+---
+# Clear state and launch fresh
+- clearState
+- launchApp
+
+# === DEV CLIENT MODE (default) ===
+# These steps handle Expo dev client Metro connection
+# Skipped when BUILD_TYPE=standalone (Maestro Cloud with installed builds)
+
+# Handle iOS "Open in App?" dialog if it appears (dev client only)
+- runFlow:
+    when:
+      visible:
+        text: "Open in"
+    commands:
+      - runFlow:
+          when:
+            true: ${BUILD_TYPE != 'standalone'}
+          commands:
+            - tapOn:
+                text: "Open"
+                index: 1
+
+# Wait for and tap Metro server (dev client only)
+- runFlow:
+    when:
+      true: ${BUILD_TYPE != 'standalone'}
+    commands:
+      # Wait for Expo dev client to show Metro server
+      # iOS uses localhost:8081, Android emulator uses 10.0.2.2:8081
+      - extendedWaitUntil:
+          visible:
+            text: ".*:8081"
+          timeout: 10000
+      # Tap on the Metro server to connect
+      - tapOn:
+          text: ".*:8081"
+      # Wait for app to start loading
+      - extendedWaitUntil:
+          visible:
+            text: "Continue"
+          timeout: 60000
+      # Dismiss Expo developer menu if shown
+      - runFlow:
+          when:
+            visible:
+              text: "developer menu"
+          commands:
+            - tapOn:
+                text: "Continue"
+
+# === STANDALONE MODE ===
+# Wait directly for the app's initial screen (standalone builds)
+- runFlow:
+    when:
+      true: ${BUILD_TYPE == 'standalone'}
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: "buttonContinue"
+          timeout: 60000
+
+# Small gesture to ensure UI is ready
+- swipe:
+    direction: DOWN
+    duration: 50

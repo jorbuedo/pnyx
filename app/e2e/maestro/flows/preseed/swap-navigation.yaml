@@ -1,0 +1,78 @@
+# E2E Test: Pre-seeded Wallet - Swap Flow Navigation
+#
+# Tests the swap flow navigation from the dashboard in a pre-seeded wallet.
+# Verifies that tapping the swap button opens the swap screen with
+# the amount input fields and token selectors visible.
+#
+# Navigation: Dashboard -> Swap button -> Swap screen
+#
+# Note: This test only validates navigation and UI elements.
+# It does NOT execute a real swap transaction (would require test funds and liquidity).
+#
+# Tags: preseed, swap
+#
+# Prerequisites:
+#   - App built with `eas build --profile e2e-preseed`
+#   - BUILD_TYPE=standalone (no Metro connection needed)
+
+appId: ${MAESTRO_APP_ID}
+tags:
+  - preseed
+  - swap
+env:
+  BUILD_TYPE: standalone
+---
+# Launch app (pre-seeded wallet will be auto-restored)
+- launchApp
+
+# === DASHBOARD READY CHECK ===
+# Wait for dashboard to load with wallet
+- extendedWaitUntil:
+    visible:
+      id: "account-card"
+    timeout: 30000
+
+# Wait for wallet to sync - balance appears when sync completes
+- extendedWaitUntil:
+    visible:
+      id: "account-card-balance"
+    timeout: 60000
+
+# Take screenshot of synced dashboard
+- takeScreenshot: screenshots/preseed-swap-dashboard
+
+# === TAP SWAP BUTTON ===
+# Tap the swap button on the dashboard quick actions
+- tapOn:
+    id: "swap-button"
+
+# Wait for animations to settle
+- waitForAnimationToEnd
+
+# === VERIFY SWAP SCREEN ===
+# Wait for swap screen to load - amount input should be visible
+- extendedWaitUntil:
+    visible:
+      id: "swap-amount-in"
+    timeout: 10000
+
+# Verify swap amount out field is visible
+- assertVisible:
+    id: "swap-amount-out"
+
+# Verify swap submit button is visible (will be disabled without valid amounts)
+- assertVisible:
+    id: "swap-submit"
+
+# Take screenshot of swap screen
+- takeScreenshot: screenshots/preseed-swap-screen
+
+# === NAVIGATE BACK ===
+# Go back to dashboard
+- pressKey: back
+
+# Wait for dashboard to load
+- extendedWaitUntil:
+    visible:
+      id: "account-card"
+    timeout: 10000

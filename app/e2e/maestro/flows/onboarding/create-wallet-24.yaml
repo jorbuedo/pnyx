@@ -1,0 +1,98 @@
+# E2E Test: Create New Wallet Flow (24-word mnemonic)
+#
+# Tests the complete wallet creation flow:
+# 1. Accept terms of service and set up PIN
+# 2. Select "Create New Wallet"
+# 3. View and reveal recovery phrase (24 words)
+# 4. Verify recovery phrase (select words in order)
+# 5. Set up encryption password
+# 6. Enter wallet name
+# 7. Complete wallet creation
+#
+# Tags: onboarding, smoke, regression
+
+appId: ${MAESTRO_APP_ID}
+tags:
+  - onboarding
+  - smoke
+  - regression
+---
+# Start fresh
+- runFlow: ../../utils/clear-and-launch.yaml
+
+# Accept terms, skip analytics, and set up PIN
+- runFlow: ../../utils/accept-terms.yaml
+
+# Wait for onboarding screen
+- waitForAnimationToEnd
+- assertVisible:
+    id: "setup-create-new-wallet-button"
+
+# Select "Create New Wallet"
+- tapOn:
+    id: "setup-create-new-wallet-button"
+
+# Recovery phrase screen - wait for mnemonic to generate
+- extendedWaitUntil:
+    visible:
+      text: "Write Down Your Recovery Phrase"
+    timeout: 10000
+
+
+# Swipe up to reveal the toggle button
+- swipe:
+    start: 50%, 80%
+    end: 50%, 50%
+    duration: 300
+
+# Reveal the recovery phrase
+- tapOn:
+    id: "recovery-phrase-toggle-button"
+- waitForAnimationToEnd
+
+# Wait for phrase to be visible (word 0 is first word)
+- extendedWaitUntil:
+    visible:
+      id: "recovery-phrase-word-0"
+    timeout: 5000
+
+- takeScreenshot: screenshots/recovery-phrase-revealed
+
+# Continue to verification
+- tapOn:
+    id: "recovery-phrase-next-button"
+
+# Mnemonic verification screen - tap words in correct order
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "verify-phrase-next-button"
+    timeout: 10000
+
+# Tap each word in order using testID (word-0 through word-23)
+# testIDs use original mnemonic position, so we tap word-0, word-1, etc.
+- evalScript: ${output.i = 0}
+- repeat:
+    times: 24
+    commands:
+      - swipe:
+          start: 50%, 80%
+          end: 50%, 40%
+          duration: 200
+      - tapOn:
+          id: ${'word-' + output.i}
+      - evalScript: ${output.i = output.i + 1}
+
+# Tap Next to proceed after verification
+- waitForAnimationToEnd
+- tapOn:
+    id: "verify-phrase-next-button"
+
+# Encryption Password Setup
+- runFlow: ../../utils/setup-password.yaml
+
+# Complete wallet creation (name input, create, wait for dashboard)
+- runFlow: ../../utils/complete-wallet-creation.yaml
+
+# Take unique screenshot for this flow
+- takeScreenshot: screenshots/create-wallet-24-success

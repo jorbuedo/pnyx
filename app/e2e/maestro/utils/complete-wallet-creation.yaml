@@ -1,0 +1,53 @@
+# Utility: Complete Wallet Creation
+#
+# Final steps after password setup to create/restore a wallet:
+# 1. Wait for wallet details screen
+# 2. Generate and enter random wallet name
+# 3. Dismiss keyboard
+# 4. Tap create wallet button
+# 5. Wait for dashboard (send-button visible)
+#
+# NOTE: This utility does NOT take a screenshot. Each calling flow
+# should take its own screenshot with a unique name for debugging.
+#
+# Prerequisites:
+#   - Password setup completed (setup-password.yaml)
+#   - App on wallet details screen
+#
+# Output:
+#   - output.WALLET_NAME: The randomly generated wallet name
+
+appId: ${MAESTRO_APP_ID}
+---
+# Wait for wallet details screen
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "wallet-name-input"
+    timeout: 30000
+
+# Generate random wallet name (8 chars)
+- evalScript: ${output.WALLET_NAME = 'Wallet' + Math.random().toString(36).substring(2, 4).toUpperCase()}
+
+# Enter wallet name
+- tapOn:
+    id: "wallet-name-input"
+- inputText: ${output.WALLET_NAME}
+- pressKey: Enter
+
+# Hide keyboard on iOS
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - hideKeyboard
+
+# Create wallet
+- tapOn:
+    id: "create-wallet-button"
+
+# Wait for wallet creation (preparing screen then dashboard)
+- extendedWaitUntil:
+    visible:
+      id: "send-button"
+    timeout: 120000

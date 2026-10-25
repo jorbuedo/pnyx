@@ -1,0 +1,154 @@
+{
+  "$schema": "https://raw.githubusercontent.com/expo/eas-cli/main/packages/eas-json/schema/eas.schema.json",
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote",
+    "promptToConfigurePushNotifications": false
+  },
+  "build": {
+    "base": {
+      "bun": "1.3.9",
+      "env": {
+        "EAS_NO_FROZEN_LOCKFILE": "1",
+        "EXPO_USE_METRO_WORKSPACE_ROOT": "1",
+        "RUST_BACKTRACE": "1",
+        "NODE_OPTIONS": "--max-old-space-size=8192"
+      },
+      "ios": {
+        "image": "latest",
+        "resourceClass": "m-medium",
+        "env": {
+          "CCACHE_SLOPPINESS": "clang_index_store,file_stat_matches,include_file_ctime,include_file_mtime,ivfsoverlay,pch_defines,modules,system_headers,time_macros",
+          "CCACHE_FILECLONE": "true",
+          "CCACHE_DEPEND": "true",
+          "CCACHE_INODECACHE": "true"
+        }
+      },
+      "android": {
+        "image": "latest",
+        "resourceClass": "large",
+        "ndk": "27.0.12077973",
+        "env": {
+          "RUST_ANDROID_GRADLE_PYTHON_COMMAND": "python3",
+          "ANDROID_NDK_VERSION": "27.0.12077973",
+          "GRADLE_OPTS": "-Dorg.gradle.jvmargs=-Xmx14g -XX:MaxMetaspaceSize=2g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8 -Dorg.gradle.parallel=true -Dorg.gradle.daemon=false",
+          "JAVA_OPTS": "-Xmx16g -XX:MaxMetaspaceSize=2g",
+          "CCACHE_DIR": "/home/expo/workingdir/build/.ccache",
+          "CCACHE_MAXSIZE": "3G",
+          "CCACHE_COMPILERCHECK": "content",
+          "CCACHE_SLOPPINESS": "time_macros,include_file_mtime,include_file_ctime,file_stat_matches"
+        }
+      },
+      "cache": {
+        "key": "android-ccache-v1",
+        "paths": [".ccache"]
+      }
+    },
+    "development": {
+      "extends": "base",
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "PNYX_BUILD_VARIANT": "devclient"
+      },
+      "ios": {
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug"
+      },
+      "channel": "pnyx-development"
+    },
+    "development:device": {
+      "extends": "base",
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "PNYX_BUILD_VARIANT": "devclient"
+      },
+      "ios": {
+        "simulator": false
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug"
+      },
+      "channel": "pnyx-development"
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "autoIncrement": true,
+      "env": {
+        "PNYX_BUILD_VARIANT": "prod",
+        "PNYX_APP_ENV": "preview",
+        "EXPO_PUBLIC_SERVICE_URL": "https://pnyx.pxkq.uk",
+        "EXPO_PUBLIC_PNYX_NETWORK": "preprod",
+        "EXPO_PUBLIC_MIDNIGHT_INDEXER_URL": "https://indexer.mainnet.midnight.network/api/v4/graphql"
+      },
+      "android": {
+        "buildType": "apk",
+        "env": {
+          "ORG_GRADLE_PROJECT_reactNativeArchitectures": "arm64-v8a,armeabi-v7a"
+        }
+      },
+      "channel": "pnyx-preview"
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true,
+      "env": {
+        "PNYX_BUILD_VARIANT": "prod"
+      },
+      "ios": {
+        "resourceClass": "m-large"
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "env": {
+          "ORG_GRADLE_PROJECT_reactNativeArchitectures": "arm64-v8a,armeabi-v7a"
+        }
+      },
+      "channel": "pnyx-production"
+    },
+    "e2e": {
+      "extends": "base",
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "e2e-preseed": {
+      "extends": "e2e",
+      "environment": "e2e-preseed"
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "placeholder@pnyx.pxkq.uk",
+        "ascAppId": "0000000000",
+        "appleTeamId": "PLACEHOLDER"
+      },
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
+    },
+    "preview": {
+      "ios": {
+        "appleId": "placeholder@pnyx.pxkq.uk",
+        "ascAppId": "0000000000",
+        "appleTeamId": "PLACEHOLDER"
+      },
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
+    }
+  }
+}

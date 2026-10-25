@@ -1,0 +1,26 @@
+{
+  "name": "@pnyx/content-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/server.ts",
+    "start": "bun src/server.ts"
+  },
+  "dependencies": {
+    "@evolution-sdk/evolution": "*",
+    "@pnyx/cardano-core": "workspace:*",
+    "@pnyx/chain-client": "workspace:*",
+    "@pnyx/contract-client": "workspace:*",
+    "@pnyx/crypto": "workspace:*",
+    "firebase-admin": "^14.1.0",
+    "jose": "^6.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260718.1",
+    "@midnight-ntwrk/ledger-v8": "8.1.2",
+    "@noble/curves": "2.4.0",
+    "@noble/hashes": "2.4.0",
+    "miniflare": "^4.20260714.0"
+  }
+}

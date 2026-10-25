@@ -1,0 +1,12 @@
+[Unit]
+Description=Pnyx corpus top-up — new Cardano mints since the last run
+Documentation=file:/home/<user>/media-rig/scripts/topup.sh
+
+[Service]
+Type=oneshot
+User=<user>
+Group=<user>
+WorkingDirectory=/home/<user>/media-rig
+ExecStart=/home/<user>/media-rig/scripts/topup.sh
+Nice=5
+TimeoutStartSec=6h

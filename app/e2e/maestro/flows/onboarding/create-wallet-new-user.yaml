@@ -1,0 +1,46 @@
+# E2E Test: Create Wallet via Quick Start (New User Flow)
+#
+# Tests the simplified wallet creation for brand new users:
+# 1. Accept terms of service and set up PIN (via accept-terms-new-user utility)
+# 2. Choose "New User" path (utility handles this)
+# 3. Tap "Quick Start" to auto-generate mnemonic
+# 4. Set up encryption password
+# 5. Enter wallet name
+# 6. Complete wallet creation
+#
+# This flow skips mnemonic display and verification, making it
+# faster for users who want to get started quickly.
+#
+# Tags: onboarding, smoke, regression
+#
+# Prerequisites:
+#   - Fresh app state (no existing wallet)
+
+appId: ${MAESTRO_APP_ID}
+tags:
+  - onboarding
+  - smoke
+  - regression
+env:
+  BUILD_TYPE: ${BUILD_TYPE}
+---
+# Start fresh
+- runFlow: ../../utils/clear-and-launch.yaml
+
+# Accept terms, skip analytics, set up PIN, skip biometrics, choose "New User"
+# After this, we're on the new-user screen with quick-start-button visible
+- runFlow: ../../utils/accept-terms-new-user.yaml
+
+# Tap "Quick Start" to generate mnemonic and proceed
+- tapOn:
+    id: "quick-start-button"
+
+# Encryption Password Setup
+# Quick Start auto-generates mnemonic and navigates to password setup
+- runFlow: ../../utils/setup-password.yaml
+
+# Complete wallet creation (name input, create, wait for dashboard)
+- runFlow: ../../utils/complete-wallet-creation.yaml
+
+# Take unique screenshot for this flow
+- takeScreenshot: screenshots/create-wallet-new-user-success

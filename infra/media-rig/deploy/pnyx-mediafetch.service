@@ -1,0 +1,24 @@
+[Unit]
+Description=Pnyx media crawl — IPFS backfill written straight into /srv/pnyx-media
+Documentation=file:/home/<user>/media-rig/README.md
+After=network-online.target nginx.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=<user>
+Group=<user>
+WorkingDirectory=/home/<user>/media-rig
+ExecStart=/home/<user>/media-rig/scripts/run-fetch.sh
+Restart=always
+RestartSec=30
+# The box is a web origin first and a crawler second: nginx must stay responsive.
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6
+MemoryHigh=1800M
+MemoryMax=2400M
+TimeoutStopSec=90
+
+[Install]
+WantedBy=multi-user.target

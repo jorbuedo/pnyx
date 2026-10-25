@@ -1,0 +1,36 @@
+{
+  "extends": "./tsconfig.base.json",
+  "include": [],
+  "references": [
+    { "path": "tsconfig.build.json" },
+    { "path": "tsconfig.node.json" },
+    { "path": "./packages/crypto" },
+    { "path": "./packages/hardware" },
+    { "path": "./packages/config" },
+    { "path": "./packages/storage" },
+    { "path": "./packages/migrations" },
+    { "path": "./packages/dapp-connector" },
+    { "path": "./packages/mcp-server" },
+    { "path": "./packages/signer" },
+    { "path": "./packages/signing-service" },
+    { "path": "./packages/tx-review" },
+    { "path": "./packages/store" },
+    { "path": "./packages/wallet" },
+
+    { "path": "./packages/links" },
+    { "path": "./packages/identicon" },
+
+    { "path": "./packages/blockstore-native" },
+    { "path": "./packages/chain-client" },
+    { "path": "./packages/contract-client" },
+    { "path": "./packages/midnight-native" },
+    { "path": "./packages/model-native" },
+    { "path": "./packages/passkey-native" },
+    { "path": "./packages/ur" },
+
+    { "path": "./services/content" },
+    { "path": "./services/data-worker" },
+
+    { "path": "./app" }
+  ]
+}

@@ -1,0 +1,90 @@
+[package]
+name = "midnight-native"
+version = "0.1.0"
+edition = "2021"
+description = "Native Midnight key derivation (curve math) for React Native — wraps Midnight's own crates, no WASM."
+license = "Apache-2.0"
+
+[lib]
+name = "midnight_native"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[features]
+default = ["proving"]
+# Everything the device rail needs: key derivation, preimage construction, ZK proving, native tx
+# assembly, and the C/JNI bridges. Building WITHOUT it leaves only contract-state decoding
+# (`state_read`, `identity`, `midns`), which is all the Cloudflare Worker does — and drops the
+# ledger, zkir, zswap, coin-structure and transient-crypto trees from the build entirely rather
+# than relying on LTO to strip them afterwards.
+# The Cloudflare Worker build: decode only, plus the wasm exports and a randomness handler.
+# `getrandom` 0.2 defaults to a wasm-bindgen-backed JS backend on wasm32 (it arrives transitively
+# through midnight-curves), which would drag a generated glue layer into a module that never draws
+# randomness. `custom` lets us register a handler that refuses instead — see wasm_bridge.rs.
+worker = ["dep:getrandom"]
+proving = [
+  "dep:midnight-ledger",
+  "dep:midnight-coin-structure",
+  "dep:midnight-zswap",
+  "dep:midnight-transient-crypto",
+  "dep:midnight-zkir",
+  "dep:rand",
+  "dep:futures",
+  "dep:anyhow",
+]
+
+[dependencies]
+midnight-ledger = { version = "8.1.2", default-features = false, optional = true }
+midnight-base-crypto = "1.0.1"
+midnight-coin-structure = { version = "2.0.2", optional = true }
+# On-chain runtime (VM, ops, state, cost model) + storage backing — needed to construct
+# the `joinOpenCircle` ProofPreimage natively (build the impact op program, run the VM to
+# validate the transcript, assemble the preimage via the ledger's construct path).
+# `vendored` skips the build script's Chez Scheme macro generation. It used to arrive transitively
+# from midnight-ledger; declared here so a build without the ledger (the Worker's) still gets it
+# instead of failing on a missing `scheme` binary.
+midnight-onchain-runtime = { version = "3.1.1", default-features = false, features = ["vendored"] }
+midnight-storage = "2.0.3"
+midnight-zswap = { version = "8.1.2", default-features = false, optional = true }
+midnight-transient-crypto = { version = "2.1.1", optional = true }
+midnight-serialize = "1.1.1"
+# JSON for the Compact host bridge (`compact.rs`). Not a new supply-chain item: the midnight
+# crates already pull serde_json 1.0.150 transitively, so this only names what is already built.
+# Declared because the bridge must *parse* a program the JS driver emits, and a hand-rolled
+# parser for a recursive tagged union is exactly the kind of thing that fails silently.
+serde_json = "1"
+# Proving: the same ZKIR v2 implementation the proof server uses (`zkir_v2` in midnight-ledger).
+midnight-zkir = { version = "2.1.1", optional = true }
+rand = { version = "0.8", optional = true }
+getrandom = { version = "0.2", features = ["custom"], optional = true }
+futures = { version = "0.3", default-features = false, features = ["executor"], optional = true }
+# Not a new dependency in the tree — the midnight crates already pull it. Declared because
+# `ProvingProvider`'s methods return `anyhow::Error` by name, so implementing that trait
+# (`tx::NoCircuitProver`) requires the type to be nameable here.
+anyhow = { version = "1", default-features = false, optional = true }
+
+# JNI bridge for Android (Kotlin binds the Java_* exports directly). Android-only so host
+# `cargo test` and the iOS C-ABI build don't pull it.
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
+
+[dev-dependencies]
+bip39 = "2"
+bip32 = "0.5"
+hex = "0.4"
+# Host-only, for the zswap-manifest example: it re-hashes the mirrored artifacts and checks them
+# against the hashes `ZSWAP_EXPECTED_FILES` pins, so a stale cache cannot be published.
+sha2 = "0.10"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+# Size-tuned Worker build. Separate from `release` on purpose: the device rail is proving-bound
+# (0.8–2.7 s per proof) and must keep opt-level 3, while the Worker only decodes ~0.4 ms of state
+# and would rather have a smaller module to instantiate inside the startup-CPU budget.
+[profile.wasm-min]
+inherits = "release"
+opt-level = "z"
+panic = "abort"

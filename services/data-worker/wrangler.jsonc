@@ -1,0 +1,17 @@
+{
+  // pnyx-data — slow-data (DReps/pools/pricing). Cron-only Worker: it refreshes
+  // the R2 blobs on a schedule; clients read those blobs R2-DIRECT from the
+  // pnyx-data bucket's public custom domain (data.pxkq.uk), so reads are free
+  // and never invoke this Worker. No public route — reachable only at its
+  // workers.dev URL for manual /refresh admin.
+  "name": "pnyx-data",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-07-18",
+  "observability": { "enabled": true },
+  "triggers": {
+    "crons": ["0 5 * * *"]
+  },
+  "r2_buckets": [
+    { "binding": "DATA", "bucket_name": "pnyx-data" }
+  ]
+}

@@ -1,0 +1,33 @@
+# E2E Test: Onboarding Navigation Smoke Test
+#
+# Verifies onboarding screen loads and can navigate to create wallet.
+# Brand-agnostic: asserts on generic onboarding UI.
+#
+# Tags: smoke, onboarding
+
+appId: ${MAESTRO_APP_ID}
+tags:
+  - smoke
+  - onboarding
+---
+# Start fresh - includes dev client handling
+- runFlow: ../../utils/clear-and-launch.yaml
+
+# Accept terms
+- runFlow: ../../utils/accept-terms.yaml
+
+# Take screenshot of onboarding screen
+- takeScreenshot: screenshots/onboarding-main-screen
+
+# Tap on "Create New Wallet" button
+- tapOn:
+    id: "setup-create-new-wallet-button"
+
+# Wait for recovery phrase screen to load
+- extendedWaitUntil:
+    visible:
+      text: "Write Down Your Recovery Phrase"
+    timeout: 10000
+
+# Take screenshot to verify we're on recovery phrase screen
+- takeScreenshot: screenshots/create-wallet-recovery-phrase

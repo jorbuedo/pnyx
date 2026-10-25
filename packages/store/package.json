@@ -1,0 +1,228 @@
+{
+  "name": "@pnyx/store",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./indexeddb": {
+      "types": "./indexeddb.ts",
+      "default": "./indexeddb.ts"
+    },
+    "./store": {
+      "types": "./store.ts",
+      "default": "./store.ts"
+    },
+    "./tx-table": {
+      "types": "./tx-table.ts",
+      "default": "./tx-table.ts"
+    },
+    "./errors": {
+      "types": "./errors.ts",
+      "default": "./errors.ts"
+    },
+    "./leveldb": {
+      "types": "./leveldb.ts",
+      "default": "./leveldb.ts"
+    },
+    "./expo-sqlite": {
+      "react-native": {
+        "types": "./expo-sqlite.native.ts",
+        "default": "./expo-sqlite.native.ts"
+      },
+      "types": "./expo-sqlite.ts",
+      "default": "./expo-sqlite.ts"
+    },
+    "./expo-sqlite-resilient": {
+      "react-native": {
+        "types": "./expo-sqlite-resilient.native.ts",
+        "default": "./expo-sqlite-resilient.native.ts"
+      },
+      "types": "./expo-sqlite-resilient.ts",
+      "default": "./expo-sqlite-resilient.ts"
+    },
+    "./tx-table.expo-sqlite": {
+      "react-native": {
+        "types": "./tx-table.expo-sqlite.native.ts",
+        "default": "./tx-table.expo-sqlite.native.ts"
+      },
+      "types": "./tx-table.expo-sqlite.ts",
+      "default": "./tx-table.expo-sqlite.ts"
+    },
+    "./tx-table.indexeddb": {
+      "types": "./tx-table.indexeddb.ts",
+      "default": "./tx-table.indexeddb.ts"
+    },
+    "./tx-table.memory": {
+      "types": "./tx-table.memory.ts",
+      "default": "./tx-table.memory.ts"
+    },
+    "./utxo-table": {
+      "types": "./utxo-table.ts",
+      "default": "./utxo-table.ts"
+    },
+    "./utxo-table.expo-sqlite": {
+      "react-native": {
+        "types": "./utxo-table.expo-sqlite.native.ts",
+        "default": "./utxo-table.expo-sqlite.native.ts"
+      },
+      "types": "./utxo-table.expo-sqlite.ts",
+      "default": "./utxo-table.expo-sqlite.ts"
+    },
+    "./utxo-table.indexeddb": {
+      "types": "./utxo-table.indexeddb.ts",
+      "default": "./utxo-table.indexeddb.ts"
+    },
+    "./utxo-table.memory": {
+      "types": "./utxo-table.memory.ts",
+      "default": "./utxo-table.memory.ts"
+    },
+    "./assets-table": {
+      "types": "./assets-table.ts",
+      "default": "./assets-table.ts"
+    },
+    "./assets-table.expo-sqlite": {
+      "react-native": {
+        "types": "./assets-table.expo-sqlite.native.ts",
+        "default": "./assets-table.expo-sqlite.native.ts"
+      },
+      "types": "./assets-table.expo-sqlite.ts",
+      "default": "./assets-table.expo-sqlite.ts"
+    },
+    "./assets-table.indexeddb": {
+      "types": "./assets-table.indexeddb.ts",
+      "default": "./assets-table.indexeddb.ts"
+    },
+    "./assets-table.memory": {
+      "types": "./assets-table.memory.ts",
+      "default": "./assets-table.memory.ts"
+    },
+    "./token-metadata-table": {
+      "types": "./token-metadata-table.ts",
+      "default": "./token-metadata-table.ts"
+    },
+    "./token-metadata-table.expo-sqlite": {
+      "react-native": {
+        "types": "./token-metadata-table.expo-sqlite.native.ts",
+        "default": "./token-metadata-table.expo-sqlite.native.ts"
+      },
+      "types": "./token-metadata-table.expo-sqlite.ts",
+      "default": "./token-metadata-table.expo-sqlite.ts"
+    },
+    "./token-metadata-table.indexeddb": {
+      "types": "./token-metadata-table.indexeddb.ts",
+      "default": "./token-metadata-table.indexeddb.ts"
+    },
+    "./token-metadata-table.memory": {
+      "types": "./token-metadata-table.memory.ts",
+      "default": "./token-metadata-table.memory.ts"
+    },
+    "./token-prices-table": {
+      "types": "./token-prices-table.ts",
+      "default": "./token-prices-table.ts"
+    },
+    "./token-prices-table.expo-sqlite": {
+      "react-native": {
+        "types": "./token-prices-table.expo-sqlite.native.ts",
+        "default": "./token-prices-table.expo-sqlite.native.ts"
+      },
+      "types": "./token-prices-table.expo-sqlite.ts",
+      "default": "./token-prices-table.expo-sqlite.ts"
+    },
+    "./token-prices-table.indexeddb": {
+      "types": "./token-prices-table.indexeddb.ts",
+      "default": "./token-prices-table.indexeddb.ts"
+    },
+    "./token-prices-table.memory": {
+      "types": "./token-prices-table.memory.ts",
+      "default": "./token-prices-table.memory.ts"
+    },
+    "./price-point-table": {
+      "types": "./price-point-table.ts",
+      "default": "./price-point-table.ts"
+    },
+    "./price-point-table.expo-sqlite": {
+      "react-native": {
+        "types": "./price-point-table.expo-sqlite.native.ts",
+        "default": "./price-point-table.expo-sqlite.native.ts"
+      },
+      "types": "./price-point-table.expo-sqlite.ts",
+      "default": "./price-point-table.expo-sqlite.ts"
+    },
+    "./price-point-table.indexeddb": {
+      "types": "./price-point-table.indexeddb.ts",
+      "default": "./price-point-table.indexeddb.ts"
+    },
+    "./price-point-table.memory": {
+      "types": "./price-point-table.memory.ts",
+      "default": "./price-point-table.memory.ts"
+    },
+    "./address-table": {
+      "types": "./address-table.ts",
+      "default": "./address-table.ts"
+    },
+    "./address-table.expo-sqlite": {
+      "react-native": {
+        "types": "./address-table.expo-sqlite.native.ts",
+        "default": "./address-table.expo-sqlite.native.ts"
+      },
+      "types": "./address-table.expo-sqlite.ts",
+      "default": "./address-table.expo-sqlite.ts"
+    },
+    "./address-table.indexeddb": {
+      "types": "./address-table.indexeddb.ts",
+      "default": "./address-table.indexeddb.ts"
+    },
+    "./address-table.memory": {
+      "types": "./address-table.memory.ts",
+      "default": "./address-table.memory.ts"
+    },
+    "./better-sqlite3": {
+      "types": "./better-sqlite3.ts",
+      "default": "./better-sqlite3.ts"
+    },
+    "./platform": {
+      "react-native": {
+        "types": "./platform.native.ts",
+        "default": "./platform.native.ts"
+      },
+      "types": "./platform.ts",
+      "default": "./platform.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "clean": "rm -rf dist node_modules/.tmp"
+  },
+  "dependencies": {
+    "effect": "3.21.4"
+  },
+  "peerDependencies": {
+    "level": ">=8.0.0",
+    "expo-sqlite": ">=14.0.0",
+    "better-sqlite3": ">=11.0.0"
+  },
+  "peerDependenciesMeta": {
+    "level": {
+      "optional": true
+    },
+    "expo-sqlite": {
+      "optional": true
+    },
+    "better-sqlite3": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@effect/vitest": "0.27.0",
+    "@types/better-sqlite3": "7.6.12",
+    "@types/node": "25.0.9",
+    "typescript": "~6.0.3",
+    "vitest": "4.1.10"
+  }
+}

@@ -1,0 +1,19 @@
+# Utility: Accept terms and land on the unified entry screen
+#
+# Complete init flow for new users (Quick Start):
+# 1-4. Base init (ToS, analytics, PIN, biometric skip) via init-base.yaml
+# 5. The entry screen now offers Quick start / seed phrase / import directly.
+#
+# After this flow, you're on the entry screen with quick-start-button visible.
+
+appId: ${MAESTRO_APP_ID}
+---
+# Run base init (ToS, analytics, PIN, biometric)
+- runFlow: ./init-base.yaml
+
+# === STEP 5: Entry screen ===
+# Wait for the unified entry screen (reached after init-base completes)
+- extendedWaitUntil:
+    visible:
+      id: "quick-start-button"
+    timeout: 15000

@@ -1,0 +1,27 @@
+appId: uk.pxkq.pnyx.dev
+---
+# Pre-conditions: password sheet open, NO keyboard up.
+# autoComplete="off" was added to suppress iOS AutoFill popup.
+
+# Re-focus input (in case prior taps removed focus). Input with keyboard
+# collapsed is at y~83% per measurement.
+- tapOn:
+    point: "50%,83%"
+- waitForAnimationToEnd:
+    timeout: 1000
+- takeScreenshot:
+    path: /tmp/proto-diff/focused
+- inputText: "1234567890!A"
+- waitForAnimationToEnd:
+    timeout: 1000
+- takeScreenshot:
+    path: /tmp/proto-diff/typed
+# Sign with keyboard up: ~46% y
+- tapOn:
+    point: "50%,46%"
+- takeScreenshot:
+    path: /tmp/proto-diff/at-sign
+- waitForAnimationToEnd:
+    timeout: 6000
+- takeScreenshot:
+    path: /tmp/proto-diff/post-sign

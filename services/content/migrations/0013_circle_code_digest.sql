@@ -1,0 +1,12 @@
+-- The code digest of the contract a circle actually deployed.
+--
+-- A circle's verifier keys *are* its code (`sponsorship.ts` hashes them to recognise our templates),
+-- and a contract deployed from an older compile of `circle.compact` keeps those older keys for ever.
+-- Reads still work — the ledger only ever gained fields, appended — but every *proof* against it is
+-- invalid and the sponsor refuses its calls, so the circle looks healthy while being unusable.
+--
+-- Recording the digest is what lets a client say so instead of offering a door that does not open.
+--
+-- Nullable, and NULL means **not determined yet**, never "current": it is filled in the first time a
+-- confirmed circle is read, and a circle that has never settled has no contract to have a digest.
+ALTER TABLE circles ADD COLUMN code_digest TEXT;

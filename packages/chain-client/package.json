@@ -1,0 +1,32 @@
+{
+  "name": "@pnyx/chain-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./balancing": "./src/balancing.ts",
+    "./client": "./src/client.ts",
+    "./master-seed": "./src/master-seed.ts",
+    "./proven": "./src/proven.ts",
+    "./sponsor-client": "./src/sponsor-client.ts",
+    "./sponsorship": "./src/sponsorship.ts",
+    "./submission": "./src/submission.ts",
+    "./submit-proven": "./src/submit-proven.ts",
+    "./wallet": "./src/wallet.ts"
+  },
+  "dependencies": {
+    "@pnyx/contract-client": "workspace:*",
+    "@midnight-ntwrk/midnight-js-contracts": "4.1.1",
+    "@midnight-ntwrk/midnight-js-network-id": "4.1.1",
+    "@midnight-ntwrk/midnight-js-protocol": "4.1.1",
+    "@midnight-ntwrk/testkit-js": "4.1.1",
+    "@midnight-ntwrk/wallet-sdk": "1.2.0",
+    "@midnight-ntwrk/wallet-sdk-capabilities": "3.3.1",
+    "@midnight-ntwrk/wallet-sdk-shielded": "3.0.2",
+    "@midnight-ntwrk/zkir-v2": "2.1.1",
+    "@noble/hashes": "2.4.0",
+    "@scure/bip39": "2.4.0",
+    "effect": "3.21.4",
+    "rxjs": "^7.8.2"
+  }
+}

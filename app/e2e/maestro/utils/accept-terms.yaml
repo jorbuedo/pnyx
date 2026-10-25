@@ -1,0 +1,29 @@
+# Utility: Accept terms and choose "Import"
+#
+# Complete init flow for returning users (account restore from phrase/backup):
+# 1-4. Base init (ToS, analytics, PIN, biometric skip) via init-base.yaml
+# 5. Choose "Import" to go to the restore options
+#
+# After this flow, you're on the onboarding index with restore options.
+
+appId: ${MAESTRO_APP_ID}
+---
+# Run base init (ToS, analytics, PIN, biometric)
+- runFlow: ./init-base.yaml
+
+# === STEP 5: Choose Import ===
+# Wait for the unified entry screen (reached after init-base completes)
+- extendedWaitUntil:
+    visible:
+      id: "import-account-button"
+    timeout: 15000
+
+# Choose "Import" to go to the restore options
+- tapOn:
+    id: "import-account-button"
+
+# Wait for onboarding screen
+- extendedWaitUntil:
+    visible:
+      id: "setup-restore-wallet-button"
+    timeout: 10000

@@ -1,0 +1,29 @@
+{
+  "name": "@pnyx/links",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Cardano CIP-13 URI + brand deep-link parsing/building for wallet integrations (pnyx://, https fallback). Supports payment, browse, transfer, exchange, browser-launch, and chain-aware partner payment links.",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "clean": "rm -rf dist node_modules/.tmp"
+  },
+  "dependencies": {
+    "effect": "3.21.4"
+  },
+  "devDependencies": {
+    "@effect/vitest": "0.27.0",
+    "@types/node": "25.0.9",
+    "typescript": "~6.0.3",
+    "vitest": "4.1.10"
+  }
+}

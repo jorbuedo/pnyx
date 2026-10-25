@@ -1,0 +1,78 @@
+# Pnyx token-holding proxy. Copy to /etc/pnyx-proxy/proxy.toml and edit.
+#
+# This file names secrets, it never holds them: every `secret` is a key looked up in secrets_file,
+# which is the only 0600 file involved. That split is what lets this one be committed.
+
+# Plaintext on localhost. cloudflared terminates TLS in front, exactly as on the sponsor host and
+# the indexer box. ⚠️ Binding this to a public interface publishes an unauthenticated
+# credential-injecting proxy to the internet.
+listen = "127.0.0.1:8787"
+secrets_file = "/etc/pnyx-proxy/secrets.env"
+
+# ── SteelSwap ─────────────────────────────────────────────────────────────────────────────────
+# The reason this proxy exists first. The partner key is the principal SteelSwap attributes the
+# swap fee to, it is published today in a world-readable remote config, and ⚠️ we cannot rotate it
+# ourselves: `POST /auth/keys` is 409 while an active key exists and our partner account carries no
+# `maintenance_address`. Holding it here is the whole mitigation.
+
+[credential.steelswap]
+header = "authorization"
+prefix = "Bearer "
+keys = [{secret = "STEELSWAP_API_KEY"}]
+
+# Partner-keyed /api/v2/*, keyless /tokens/icon/{unit}/. One route covers both; the icon path
+# simply ignores the header.
+[[route]]
+prefix = "/swap"
+upstream = "https://devapi.steelswap.io"
+credential = "steelswap"
+# ⚠️ `/api/v2/auth/*` is the CIP-8 challenge/verify handshake, which authenticates the CALLER. A
+# partner bearer there fails it — measured 2026-10-18: with the partner key withdrawn from remote
+# config the app fell back to minting its own CIP-8 key, and the proxy injecting on the handshake
+# turned that fallback into `SteelswapAuthError`. The data routes still get the partner key, so fee
+# attribution is unaffected.
+credential_skip = ["/api/v2/auth/"]
+
+# ── Midnight indexers ─────────────────────────────────────────────────────────────────────────
+# ⚠️ A Blockfrost `project_id` belongs to ONE network, so each network gets its own credential
+# block rather than sharing one. Adding a network is this pattern again plus its secret — never
+# reusing another network's key, which would simply 403.
+#
+# The daily quota below is Blockfrost's free Starter tier. ⚠️ Whether that 50,000 is per project or
+# per account is not stated in their docs; if it is per account, split the number across the
+# network blocks rather than giving each the full figure. /healthz counts per key, so the
+# dashboard settles it.
+
+# ⚠️⚠️ **Every secret named here must exist in secrets_file before the proxy will start.**
+# `config.rs` validates the pair up front and exits 1 with `needs secret …, which the secrets file
+# does not set`; it does NOT skip the key. This cost a 33-second outage on 2026-10-19 — a second
+# key was declared ahead of its secret, the proxy crash-looped, and it took `/swap` and
+# `/midnight/mainnet` down with it. Add the secret FIRST, then the key.
+[credential.blockfrost-midnight-preprod]
+header = "project_id" # lowercase with an underscore: `Project-Id` is a different header and 403s
+keys = [{secret = "BLOCKFROST_MIDNIGHT_PREPROD_FREE", daily_quota = 50000}]
+
+# Our self-hosted mainnet indexer. No key, and inventing one would send a Blockfrost credential to
+# a host that is not Blockfrost. ▶ When a Blockfrost mainnet project exists, this becomes a
+# `credential = "blockfrost-midnight-mainnet"` block and an upstream swap — one config change, no
+# release, because the app reaches both through this same path.
+[[route]]
+prefix = "/midnight/mainnet"
+upstream = "https://midnight-mainnet.pxkq.uk/api/v4/graphql"
+
+# Blockfrost replaced Midnight's own preprod indexer, which answers 410. Same `/api/v4/graphql`
+# shape as ours, so a client's path differs only in the network segment.
+# GraphQL over HTTP, and `/ws` on the same prefix for the subscription — one route covers both.
+[[route]]
+prefix = "/midnight/preprod"
+upstream = "https://midnight-preprod.blockfrost.io/api/v4/graphql"
+credential = "blockfrost-midnight-preprod"
+
+# ▶ /midnight/preview: add when that project exists. Blockfrost serves mainnet, preprod and
+# preview for Midnight.
+
+# ── Not proxied, deliberately ─────────────────────────────────────────────────────────────────
+# ⚠️ **Koios is NOT routed here** (dev-lead call, 2026-10-18). Its token buys the authenticated
+# rate tier and nothing else — unset simply means the anonymous tier, so it is not a billed
+# account and not a fee-attribution principal, which is what the other two are. It stays in the
+# app's env. Do not add it back without a reason that names what changed.

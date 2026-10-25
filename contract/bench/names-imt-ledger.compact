@@ -1,0 +1,201 @@
+// BENCHMARK CONTRACT — not deployed, not imported by the app.
+//
+// The indexed-Merkle-tree candidate for `identity.compact`'s name registry, kept in the tree so the
+// measurements in `docs/CONTRACT_RESULTS.md` can be reproduced rather than re-derived. `names` is
+// gone; a single root cell stands in for it and the tree itself lives off chain. Measure with:
+//
+//   compactc --skip-zk contract/bench/names-imt.compact /tmp/out
+//   zkir mock-compile -v /tmp/out/zkir/claimName.zkir
+//
+// Depth is 24 (16.7M capacity). Depth barely matters — see the doc — so it is written out rather
+// than templated.
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+struct IdentityRow {
+  anchor: Bytes<32>;
+  authPub: Bytes<32>;
+  name: Bytes<32>;
+}
+export ledger identities: Map<Bytes<32>, IdentityRow>;
+
+// The names index as a ledger Merkle tree. Leaves are `nameLeaf` digests of a sorted linked list,
+// so an absent name has exactly one bracketing predecessor and a present one has none.
+//
+// On chain rather than a bare root cell because the append step of an indexed tree cannot be
+// expressed otherwise: proving a free slot empty needs `merkleTreePathRoot` to reproduce an
+// unfilled leaf, and an unfilled subtree is the zero digest while `merkleTreePathRoot` always
+// applies `leafHash` — which never returns zero. Measured, both leaf encodings, 2026-08-18.
+// With the tree in the ledger the runtime performs both writes and recomputes the root itself.
+export ledger names: MerkleTree<24, Bytes<32>>;
+
+/// The head sentinel: value 0, next 0 — an empty sorted list spanning the whole range, so the very
+/// first claim has a predecessor to bracket against. A production constructor would also seed the
+/// reserved handles, in order, linked.
+constructor() {
+  names.insert(nameLeaf(pad(32, ""), pad(32, ""), pad(32, "")));
+}
+
+witness identitySk(): Bytes<32>;
+
+// --- limb decompositions, bound to their values in-circuit ---
+witness nameLimbs(): Vector<4, Uint<64>>;
+witness nameLeadBytes(): Vector<5, Uint<8>>;
+witness nameLimb0Rest(): Uint<24>;
+witness predValueLimbs(): Vector<4, Uint<64>>;
+witness predNextLimbs(): Vector<4, Uint<64>>;
+
+// --- the predecessor leaf's preimage, and the two sibling vectors ---
+witness predValue(): Bytes<32>;
+witness predNext(): Bytes<32>;
+witness predOwner(): Bytes<32>;
+witness predSiblings(): Vector<24, MerkleTreePathEntry>;
+
+circuit identityCommitment(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "pnyx:id"), sk]);
+}
+
+/// hash(tag, value, nextValue, owner) — the indexed-tree leaf.
+circuit nameLeaf(value: Bytes<32>, nextValue: Bytes<32>, owner: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([value, nextValue, owner]);
+}
+
+/// Bind four witnessed 64-bit limbs to a value, and reject the non-canonical (l == v + p) alias.
+/// The cast itself cannot wrap (zkir bails on overflow) but the recomposition is field arithmetic
+/// and does, so without this guard every value has a second, differently-ordered limb reading.
+circuit bindLimbs(v: Bytes<32>, l: Vector<4, Uint<64>>): [] {
+  const acc = (l[3] as Field) * 6277101735386680763835789423207666416102355444464034512896
+    + (l[2] as Field) * 340282366920938463463374607431768211456
+    + (l[1] as Field) * 18446744073709551616
+    + (l[0] as Field);
+  assert(acc == v as Field, "limb bind");
+  // p = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001, little-endian limbs
+  const lt3 = l[3] < 8358789429867257160;
+  const eq3 = l[3] == 8358789429867257160;
+  const lt2 = l[2] < 3696306372397203973;
+  const eq2 = l[2] == 3696306372397203973;
+  const lt1 = l[1] < 6033159830199810558;
+  const eq1 = l[1] == 6033159830199810558;
+  const lt0 = l[0] < 18446744069414584321;
+  assert(lt3 || (eq3 && (lt2 || (eq2 && (lt1 || (eq1 && lt0))))), "limbs not canonical");
+}
+
+/// a < b over the 4-limb little-endian reading.
+circuit limbsLess(a: Vector<4, Uint<64>>, b: Vector<4, Uint<64>>): Boolean {
+  const lt3 = a[3] < b[3];
+  const eq3 = a[3] == b[3];
+  const lt2 = a[2] < b[2];
+  const eq2 = a[2] == b[2];
+  const lt1 = a[1] < b[1];
+  const eq1 = a[1] == b[1];
+  const lt0 = a[0] < b[0];
+  return lt3 || (eq3 && (lt2 || (eq2 && (lt1 || (eq1 && lt0)))));
+}
+
+/// Five-byte floor, read off limb 0 rather than off a `Bytes<32> as Vector<32, Uint<8>>` cast.
+/// Byte order is little-endian, so limb 0 carries the handle's first eight UTF-8 bytes; the five
+/// lead bytes plus a 24-bit remainder recompose it exactly, and 40 + 24 == 64 makes that reading
+/// unique without a further guard.
+circuit requireMinHandleBytes(limb0: Uint<64>, b: Vector<5, Uint<8>>, rest: Uint<24>): [] {
+  const acc = (b[0] as Field)
+    + (b[1] as Field) * 256
+    + (b[2] as Field) * 65536
+    + (b[3] as Field) * 16777216
+    + (b[4] as Field) * 4294967296
+    + (rest as Field) * 1099511627776;
+  assert(acc == limb0 as Field, "lead-byte bind");
+  assert(b[0] != 0, "handle too short");
+  assert(b[1] != 0, "handle too short");
+  assert(b[2] != 0, "handle too short");
+  assert(b[3] != 0, "handle too short");
+  assert(b[4] != 0, "handle too short");
+}
+
+/// Unchanged from `identity.compact` — present so the benchmark's `claimName` runs against a real
+/// identity row, and so both designs are measured with the same surrounding contract.
+export circuit publishIdentityRow(anchor: Bytes<32>, authPub: Bytes<32>): [] {
+  const id = disclose(identityCommitment(identitySk()));
+  const a = disclose(anchor);
+  const p = disclose(authPub);
+  if (identities.member(id)) {
+    const prior = identities.lookup(id);
+    identities.insert(id, IdentityRow { anchor: a, authPub: p, name: prior.name });
+  } else {
+    identities.insert(id, IdentityRow { anchor: a, authPub: p, name: pad(32, "") });
+  }
+}
+
+/// Claim a handle by proving it absent from the tree, then inserting it — the indexed-Merkle-tree
+/// two-step. Four path computations: verify the predecessor under R0, re-root with the predecessor
+/// re-pointed to R1, verify the free slot empty under R1, re-root with the new leaf.
+///
+/// Both bindings the earlier sketch left unwired are structural here rather than asserted: each
+/// path is *built* around a leaf the circuit computed, so a witness cannot supply a leaf that
+/// disagrees with its preimage; and each pair reuses one sibling vector, so the pair cannot
+/// straddle two different trees.
+export circuit claimName(name: Bytes<32>, makePrimary: Boolean): [] {
+  const nl = nameLimbs();
+  bindLimbs(name, nl);
+  requireMinHandleBytes(nl[0], nameLeadBytes(), nameLimb0Rest());
+
+  const c = identityCommitment(identitySk());
+  const id = disclose(c);
+  assert(id != pad(32, ""), "identity commitment must not be the reserved sentinel");
+  assert(identities.member(id), "no identity row");
+
+  const pv = predValue();
+  const pn = predNext();
+  const po = predOwner();
+  const pvl = predValueLimbs();
+  const pnl = predNextLimbs();
+  bindLimbs(pv, pvl);
+  bindLimbs(pn, pnl);
+
+  // pv < name, and name < pn unless pn is the end-of-list sentinel. Together these are the
+  // non-membership proof: the tree is a sorted linked list, so an absent name has exactly one
+  // bracketing pair and a present one has none.
+  assert(limbsLess(pvl, nl), "predecessor not below");
+  const isTail = pn == pad(32, "");
+  assert(isTail || limbsLess(nl, pnl), "successor not above");
+
+  const p = MerkleTreePath<24, Bytes<32>> { leaf: nameLeaf(pv, pn, po), path: predSiblings() };
+  assert(names.checkRoot(disclose(merkleTreePathRoot<24, Bytes<32>>(p))), "predecessor not in the current tree");
+
+  // The slot re-pointed is provably the slot proved: `goes_left` carries the position, so the
+  // index is rebuilt out of the same path `checkRoot` just accepted.
+  const predIdx = ((((((((((((((((((((((((0
+    * 2 + (p.path[23].goes_left ? 0 : 1))
+    * 2 + (p.path[22].goes_left ? 0 : 1))
+    * 2 + (p.path[21].goes_left ? 0 : 1))
+    * 2 + (p.path[20].goes_left ? 0 : 1))
+    * 2 + (p.path[19].goes_left ? 0 : 1))
+    * 2 + (p.path[18].goes_left ? 0 : 1))
+    * 2 + (p.path[17].goes_left ? 0 : 1))
+    * 2 + (p.path[16].goes_left ? 0 : 1))
+    * 2 + (p.path[15].goes_left ? 0 : 1))
+    * 2 + (p.path[14].goes_left ? 0 : 1))
+    * 2 + (p.path[13].goes_left ? 0 : 1))
+    * 2 + (p.path[12].goes_left ? 0 : 1))
+    * 2 + (p.path[11].goes_left ? 0 : 1))
+    * 2 + (p.path[10].goes_left ? 0 : 1))
+    * 2 + (p.path[9].goes_left ? 0 : 1))
+    * 2 + (p.path[8].goes_left ? 0 : 1))
+    * 2 + (p.path[7].goes_left ? 0 : 1))
+    * 2 + (p.path[6].goes_left ? 0 : 1))
+    * 2 + (p.path[5].goes_left ? 0 : 1))
+    * 2 + (p.path[4].goes_left ? 0 : 1))
+    * 2 + (p.path[3].goes_left ? 0 : 1))
+    * 2 + (p.path[2].goes_left ? 0 : 1))
+    * 2 + (p.path[1].goes_left ? 0 : 1))
+    * 2 + (p.path[0].goes_left ? 0 : 1)) as Uint<64>;
+  names.insertIndex(disclose(nameLeaf(pv, name, po)), disclose(predIdx));
+  // The append position is the runtime's `firstFree`, not a witness's claim — which is what removes
+  // the unprovable emptiness step.
+  names.insert(disclose(nameLeaf(name, pn, id)));
+
+  const row = identities.lookup(id);
+  if (disclose(makePrimary) || row.name == pad(32, "")) {
+    identities.insert(id, IdentityRow { anchor: row.anchor, authPub: row.authPub, name: disclose(name) });
+  }
+}

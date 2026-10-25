@@ -1,0 +1,12 @@
+{
+  "contractAddress": "47d1fd149b321213ca170bcb31456530f07202ed99866aa111ef1e6e0d7393cf",
+  "coinPublicKey": "8ba2deb06b26d18fa9d25e48443be796c9610bef2ec44a4aee281781291a0b0b",
+  "identitySk": "2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a",
+  "c": "93cff1449e8338a87c278099daf8bd6b78ea8f6700770129cbc0058b81c0549c",
+  "anchorFill": 112,
+  "authPubFill": 113,
+  "handle": "7a65706879720000000000000000000000000000000000000000000000000000",
+  "occupiedSlots": 5,
+  "cardRowSlot": 0,
+  "cardRowKind": 11
+}

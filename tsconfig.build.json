@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.build.tsbuildinfo"
+  },
+  "include": [],
+  "references": [
+    { "path": "./packages/cardano-core" },
+    { "path": "./packages/crypto" },
+    { "path": "./packages/hardware" },
+    { "path": "./packages/config" },
+    { "path": "./packages/logger" },
+    { "path": "./packages/storage" },
+    { "path": "./packages/migrations" },
+    { "path": "./packages/dapp-connector" },
+    { "path": "./packages/mcp-server" },
+    { "path": "./packages/signer" },
+    { "path": "./packages/signing-service" },
+    { "path": "./packages/tx-review" },
+    { "path": "./packages/store" },
+    { "path": "./packages/wallet" },
+
+    { "path": "./packages/links" },
+    { "path": "./packages/identicon" }
+  ]
+}

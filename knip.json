@@ -1,0 +1,100 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "exclude": ["unlisted", "binaries", "unresolved"],
+  "ignore": [
+    "contract/**",
+    "infra/**",
+    "docs/**",
+    "**/dist/**",
+    "midnight-level-db/**",
+    "logs/**",
+    "**/*.d.ts",
+    "**/*.native.ts",
+    "**/*.native.tsx",
+    "**/*.ios.ts",
+    "**/*.ios.tsx",
+    "**/*.android.ts",
+    "**/*.android.tsx"
+  ],
+  "workspaces": {
+    ".": {
+      "entry": ["harness/*.ts", "scripts/**/*.ts", "vitest.config.ts", "vitest.shared.ts", "setupTests.ts"],
+      "project": ["harness/**/*.ts", "scripts/**/*.ts", "*.ts"]
+    },
+    "app": {
+      "ignore": [
+        "src/platform/empty-module.js",
+        "src/platform/sentry-lazy-load-stub.js",
+        "src/platform/sentry-show-report-dialog-stub.js",
+        "src/platform/ws-shim.js",
+        "src/platform/zlib-shim.js"
+      ],
+      "entry": [
+        "index.js",
+        "app/**/*.{ts,tsx,js}",
+        "app.config.js",
+        "babel.config.js",
+        "metro.config.js",
+        "plugins/**/*.{js,cjs,ts}",
+        "scripts/**/*.{ts,js}",
+        "e2e/**/*.{ts,js}",
+        "brands/**/*.{ts,js}",
+        "src/**/*.test.{ts,tsx}",
+        "src/**/__tests__/**/*.{ts,tsx}"
+      ],
+      "project": ["src/**/*.{ts,tsx,js}", "app/**/*.{ts,tsx,js}"]
+    },
+    "packages/*": {
+      "entry": ["index.ts", "src/index.ts", "**/*.test.{ts,tsx}", "vitest.config.ts", "vitest.setup.ts"],
+      "project": ["**/*.{ts,tsx}"]
+    },
+    "packages/passkey-native": {
+      "entry": ["src/index.ts", "src/**/*.test.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/chain-client": {
+      "entry": ["src/wallet.ts", "src/client.ts", "**/*.test.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/contract-client": {
+      "entry": ["src/derivations.ts", "src/witnesses.ts", "src/simulator.ts", "**/*.test.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/crypto": {
+      "entry": ["index.ts", "codec.ts", "**/*.test.ts"],
+      "project": ["**/*.ts"]
+    },
+    "packages/migrations": {
+      "entry": ["index.ts", "types.ts", "**/*.test.ts", "vitest.config.ts"],
+      "project": ["**/*.ts"]
+    },
+    "packages/signer": {
+      "entry": ["index.ts", "chains/index.ts", "**/*.test.ts", "vitest.config.ts"],
+      "project": ["**/*.ts"]
+    },
+    "packages/siwm": {
+      "entry": ["src/siwm.ts", "src/message.ts", "**/*.test.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/storage": {
+      "entry": [
+        "index.ts",
+        "browser-extension.ts",
+        "mmkv.ts",
+        "mmkv.native.ts",
+        "platform.ts",
+        "platform.native.ts",
+        "web.ts",
+        "memory.ts",
+        "types.ts",
+        "**/*.test.ts",
+        "vitest.config.ts"
+      ],
+      "project": ["**/*.ts"]
+    },
+    "services/content": {
+      "entry": ["src/server.ts", "src/**/*.test.ts"],
+      "project": ["src/**/*.ts"]
+    }
+  }
+}

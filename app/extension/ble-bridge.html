@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bluetooth Bridge</title>
+  <style>
+    :root {
+      --bg: #0D0F0D;
+      --surface: #1A1C1A;
+      --surface-hover: #262826;
+      --text: #F7F9F7;
+      --text-secondary: #B1B3B2;
+      --text-muted: #7F817F;
+      --primary: #4687FD;
+      --primary-hover: #7DABFF;
+      --accent: #21E8E6;
+      --border: #333533;
+      --notice-bg: rgba(232, 140, 53, 0.12);
+      --notice-text: #E88C35;
+      --shadow: 0 4px 30px rgba(0, 0, 0, 0.25);
+    }
+    :root.light {
+      --bg: #F7F9F7;
+      --surface: #FFFFFF;
+      --surface-hover: #EDEFED;
+      --text: #0D0F0D;
+      --text-secondary: #5B5D5B;
+      --text-muted: #7F817F;
+      --primary: #4687FD;
+      --primary-hover: #2D6AE0;
+      --accent: #17A3A1;
+      --border: #D9DBD9;
+      --notice-bg: rgba(232, 140, 53, 0.08);
+      --notice-text: #B36A1E;
+      --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .container {
+      max-width: 420px;
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 32px;
+      text-align: center;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface-hover);
+      border-radius: 14px;
+      transition: background 0.2s;
+    }
+    .icon svg {
+      width: 28px;
+      height: 28px;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .status {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+      transition: color 0.2s;
+    }
+    .device-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--accent);
+      min-height: 22px;
+      transition: color 0.2s;
+    }
+    #connect-btn {
+      display: none;
+      margin: 20px auto 0;
+      padding: 12px 28px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      background: var(--primary);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    #connect-btn:hover { background: var(--primary-hover); }
+    #connect-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .notice {
+      margin-top: 24px;
+      padding: 12px 16px;
+      background: var(--notice-bg);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--notice-text);
+      line-height: 1.5;
+      transition: background 0.2s, color 0.2s;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14.5 12L17.5 9L18.5 10L16.5 12L18.5 14L17.5 15L14.5 12Z" fill="var(--accent)"/>
+        <path d="M12 2C12 2 12 7 12 8.5M12 15.5C12 17 12 22 12 22M12 8.5L7 4V10L12 12L17 10V4L12 8.5ZM12 15.5L7 20V14L12 12L17 14V20L12 15.5Z" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1 id="heading">Bluetooth Bridge</h1>
+    <p class="status" id="status">Initializing...</p>
+    <p class="device-name" id="device-name"></p>
+    <button id="connect-btn">Select Device</button>
+    <div class="notice" id="notice">
+      Keep this tab open while using your device over Bluetooth.
+      Closing it will disconnect the device.
+    </div>
+  </div>
+  <script src="ble-bridge-loader.js"></script>
+</body>
+</html>

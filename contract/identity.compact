@@ -1,0 +1,183 @@
+// identity.compact — one deploy per identity.
+//
+// Replaces the shared `identities` / `names` registry (`docs/BOUNDED_STATE_ARCHITECTURE.md` §1).
+// A Midnight read downloads and parses a contract's **entire** state — there is no read-one-key
+// query — so a registry keyed by user cannot be read at all once it has users: measured on this
+// app's own Rust decode path, 10,000 rows took 3.5 s and 100,000 took 766 s and 6.46 GiB. Opening a
+// DM was on that path. A write could not dodge it either, since a call built against a stale
+// snapshot is rejected `Custom error: 104` even when the key it touches is free in both views.
+//
+// So the registry is gone rather than read differently, and the unit of state is one identity.
+// Reading a person's row and card is now ~1 KB regardless of how many people exist.
+//
+// **Addressing.** `address = SHA-256(tagged_serialize(ContractDeploy {initial_state, nonce}))` with
+// no deployer identity, and `nonce = persistentHash(["pnyx:identity", C])`. So a peer holding `C`
+// computes this address offline — there is no directory to consult and none to grow.
+//
+// **A squatter deploy is inert, and that is what makes the missing directory safe.** Both the nonce
+// and the sealed `id` commit to `C`, so `address(C)` can only ever hold a contract whose `id` is
+// `C`; and every circuit here authorises by deriving `C` from a witness, so whoever deploys the
+// shell gains nothing. Exactly one such address exists per identity and only its holder can write
+// it. This is why identity needs no atomic deploy-and-claim, unlike a handle: a transaction may
+// never call a contract it deploys (`harness/deploy-call-atomicity.ts`), and here it does not have
+// to.
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+/// `C`. Fixed at deploy and part of the address, so it is what the address *means* rather than
+/// something a caller asserts.
+export sealed ledger id: Bytes<32>;
+
+/// MLS Ed25519 signature public key — what a DM resolves to.
+export ledger anchor: Bytes<32>;
+
+/// Session-login key; the content service checks a challenge signature against this.
+export ledger authPub: Bytes<32>;
+
+/// The canonical display handle, UTF-8 left-aligned and zero-padded; zero = none.
+///
+/// **Unvalidated here, deliberately.** Ownership lives in `handle(name)`, and contract-to-contract
+/// calls do not exist, so this cell can only ever be a *claim*. Validity is the bidirectional rule
+/// every reader applies (`docs/BOUNDED_STATE_ARCHITECTURE.md` §3.2):
+///
+///   handle(name).owner == C && identity(C).primaryName == name && !banned && !burned
+///
+/// Both directions, always. That is what makes the two contracts' disagreement harmless — a name
+/// pointed at from here that does not point back is inert, so writing someone else's handle into
+/// this cell attributes nothing.
+export ledger primaryName: Bytes<32>;
+
+/// One row of the contact card. `kind` is opaque to this contract except for zero; the
+/// client owns what the kinds mean, which value bytes are a ciphertext, and how a value longer than
+/// one row spans consecutive slots.
+///
+/// This is the same split the handle length floor settled: touching bytes in-circuit costs ~10,800
+/// rows (a whole K step) and buys nothing here, because a malformed row only yields a card the app
+/// declines to draw. What the contract *does* enforce is the one thing a client cannot — that only
+/// this identity writes this identity's card.
+///
+/// **320 bytes because that is what the data needs, measured.** A `did:midnight:offchain` long form
+/// runs 409–951 B and spans slots; everything else fits one: a preprod `mn_shield-addr` is 132 B, a
+/// Cardano base address 103, a shared account xvk 125, every ledger-backed `did:midnight` 85–88, and
+/// the longest third-party DID method surveyed 102. An XChaCha20-Poly1305 ciphertext adds 40 B of
+/// nonce and tag, so an encrypted address still fits. Larger rows were rejected on cost rather than
+/// taste: `setRow` is K13/6,999 at this size and K14/12,948 at `Bytes<1024>`, and a uniform row size
+/// makes every edit cost what the *largest* row costs.
+struct CardRow {
+  kind: Uint<8>;
+  value: Bytes<320>;
+}
+
+/// The contact card, slot -> row. A `Map` rather than a fixed cell so an empty card costs nothing
+/// and a full one costs only what was written.
+export ledger card: Map<Uint<8>, CardRow>;
+
+witness identitySk(): Bytes<32>;
+
+/// Three numbers are inlined below because 0.23 has no top-level `const`, and each is load-bearing:
+///
+/// - **kind `0` means "no row".** `setRows` removes these rather than storing them, so "no row" and
+///   "a row saying nothing" cannot both exist.
+/// - **slot `< 64`**, well below `Uint<8>`'s own 256, so the whole card stays a bounded read: 64
+///   rows is ~20 KB of state, and this contract sits on the DM path.
+/// - **a batch covers `8` slots.** A fresh card is otherwise one proof per row — six rows at 18–45 s
+///   each is minutes of onboarding — and a batch this wide is K14/12,818 against `setRow`'s
+///   K13/6,999. Batching is what saves proving time; several calls in one transaction would not,
+///   since each call still carries its own proof.
+
+/// `C` — the public Pnyx identity. Domain-separated so the account secret cannot collide with a
+/// persona commitment or any other derivation from the same seed.
+circuit identityCommitment(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "pnyx:id"), sk]);
+}
+
+/// The only authorisation in this contract, and it needs no signature: the proof that this circuit
+/// ran with a witness hashing to the sealed `id` *is* the authorisation. A caller with a different
+/// secret derives a different `C`, which is a different address — so there is nothing here for them
+/// to write and nothing for a reader to verify.
+///
+/// It holds under sponsored submission because the proof is made on the device: the sponsor pays
+/// without being able to author anything.
+circuit requireOwner(): [] {
+  assert(identityCommitment(identitySk()) == id, "not your identity");
+}
+
+constructor(c: Bytes<32>) {
+  id = disclose(c);
+  anchor = pad(32, "");
+  authPub = pad(32, "");
+  primaryName = pad(32, "");
+}
+
+/// Publish or rotate the two keys. Overwrites in place — there is no history to accumulate, because
+/// every other caller lands on a different contract.
+///
+/// Naming is untouchable from here, and that is the point: a third writer with no rules is how a
+/// primary handle stops meaning anything. The predecessor contract had exactly that bug — its row
+/// publisher took a whole row and wrote it verbatim, so it could set the handle to bytes the naming
+/// circuits would have refused.
+export circuit publishRow(a: Bytes<32>, p: Bytes<32>): [] {
+  requireOwner();
+  anchor = disclose(a);
+  authPub = disclose(p);
+}
+
+/// Point at one of my handles, or at none. Zero clears it.
+export circuit setPrimaryName(name: Bytes<32>): [] {
+  requireOwner();
+  primaryName = disclose(name);
+}
+
+/// Write or clear one card slot. Kind zero removes it.
+export circuit setRow(slot: Uint<8>, kind: Uint<8>, value: Bytes<320>): [] {
+  requireOwner();
+  const s = disclose(slot);
+  assert(s < 64, "slot out of range");
+  const k = disclose(kind);
+  if (k == 0) {
+    // Guarded rather than branched on presence: removing an absent slot is what clearing an empty
+    // row would mean, and saying so is the whole point of the check.
+    assert(card.member(s), "no such row");
+    card.remove(s);
+  } else {
+    card.insert(s, CardRow { kind: k, value: disclose(value) });
+  }
+}
+
+/// Write four slots in one proof — the "save my card" path, against `setRow`'s "change one thing".
+///
+/// The slots are named rather than consecutive, because an edit session touches whatever the user
+/// touched; four `Uint<8>` arguments cost nothing next to the rows themselves. A duplicated slot is
+/// harmless, last write wins.
+///
+/// **Four, and the width is a measurement not a preference.** Proving cost tracks 2^K, so against
+/// four separate `setRow` calls: four slots is K14/15,512 = one proof at 2 units against four at 1,
+/// a 2x saving. Eight slots was K15/26,830 — the same 2x, at twice the latency per proof. Two slots
+/// was K14/9,853, which is exactly break-even and therefore pointless. ⚠️ K14 holds 16,384 rows, so
+/// this circuit sits at 95% of its budget: adding a field to `CardRow` or a check here tips it to
+/// K15 and doubles every card save.
+///
+/// Unrolled rather than looped because Compact has no dynamic indexing and `var` is reserved in
+/// 0.23, so the width is a template constant rather than a parameter.
+export circuit setRows(slots: Vector<4, Uint<8>>, rows: Vector<4, CardRow>): [] {
+  requireOwner();
+  writeSlot(disclose(slots[0]), disclose(rows[0]));
+  writeSlot(disclose(slots[1]), disclose(rows[1]));
+  writeSlot(disclose(slots[2]), disclose(rows[2]));
+  writeSlot(disclose(slots[3]), disclose(rows[3]));
+}
+
+/// Shared by the batch arms. Clearing an already-absent slot is a no-op here rather than an error,
+/// unlike `setRow`: a batch states what the card should be, and failing it because one slot happened
+/// to be empty would make "save" depend on what the card already held.
+circuit writeSlot(slot: Uint<8>, row: CardRow): [] {
+  assert(slot < 64, "slot out of range");
+  if (row.kind == 0) {
+    if (card.member(slot)) {
+      card.remove(slot);
+    }
+  } else {
+    card.insert(slot, row);
+  }
+}

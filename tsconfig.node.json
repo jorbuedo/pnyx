@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    /* Node.js tooling configuration */
+    "moduleResolution": "NodeNext",
+    "allowImportingTsExtensions": false,
+    "verbatimModuleSyntax": false,
+    "noEmit": true,
+    "lib": ["ES2023"],
+    "target": "ES2023",
+    "module": "NodeNext",
+    "skipLibCheck": false,
+    "types": ["node"]
+  },
+  "include": ["vitest.shared.ts", "setupTests.ts", "*.config.ts", "*.config.mjs", "*.config.js"]
+}

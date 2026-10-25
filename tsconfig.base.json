@@ -1,0 +1,120 @@
+{
+  "compilerOptions": {
+    // ============================================================================
+    // PATH ALIASES PATTERN (Per-App/Package Configuration)
+    // ============================================================================
+    // Path aliases should be configured per-app/package, NOT at root level.
+    // Each app/package needs:
+    // 1. TypeScript "paths" in its tsconfig.json
+    // 2. Bundler alias configuration:
+    //    - Vite apps: resolve.alias in vite.config.ts
+    //    - Metro/Expo apps: resolver.alias in metro.config.js
+    // 3. Vitest aliases in package-specific vitest.config.ts (if needed)
+    //
+    // Example for Vite app:
+    //   tsconfig.json: "paths": { "~/*": ["./src/*"] }
+    //   vite.config.ts: resolve: { alias: { "~/": fileURLToPath(new URL("src/", import.meta.url)) } }
+    //
+    // Example for Metro app:
+    //   tsconfig.json: "paths": { "~/*": ["./src/*"] }
+    //   metro.config.js: resolver: { alias: { "~/": path.resolve(__dirname, "./src") } }
+    //
+    // All three (TypeScript, bundler, Vitest) must match for proper resolution.
+    // ============================================================================
+    //
+    // ============================================================================
+    // PLATFORM SUFFIXES PATTERN (Per-App/Package Configuration)
+    // ============================================================================
+    // Platform suffixes should be configured per-app/package based on target platforms.
+    // Each app/package needs:
+    // 1. TypeScript "moduleSuffixes" in its tsconfig.json:
+    //    "moduleSuffixes": [".web", ".node", ".native", ""]
+    // 2. Bundler extension configuration:
+    //    - Vite apps: resolve.extensions: ['.web.tsx', '.native.tsx', '.tsx', '.ts', ...]
+    //    - Metro/Expo apps: resolver.sourceExts: ['web.tsx', 'native.tsx', 'tsx', 'ts', ...]
+    // 3. File naming: Component.web.tsx, Component.native.tsx, Component.tsx (fallback)
+    //
+    // All three (TypeScript moduleSuffixes, bundler extensions) must match.
+    // Root-level config would be too generic for different platform targets.
+    // ============================================================================
+
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "moduleDetection": "force",
+    "ignoreDeprecations": "6.0",
+    "composite": true,
+    "downlevelIteration": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": false,
+    "declaration": true,
+    "skipLibCheck": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": [],
+    "isolatedModules": true,
+    "sourceMap": true,
+    "declarationMap": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noEmitOnError": false,
+    "noErrorTruncation": false,
+    "allowJs": false,
+    "checkJs": false,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "noUncheckedIndexedAccess": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "strictNullChecks": true,
+    "baseUrl": ".",
+    // The evolution-sdk fork is type-checked from its BUILT declarations, never its source. Its own
+    // tsconfig does not set `exactOptionalPropertyTypes` or the unused-local checks, so pulling its
+    // `src` into a project here reports dozens of errors in code that is green in its own repo —
+    // and `skipLibCheck` does not help, because those are `.ts` files, not `.d.ts`.
+    //
+    // ⚠️ Every package needs BOTH forms: the bare specifier and the subpath. A lifted package's own
+    // declarations import its siblings bare (`@evolution-sdk/review` from
+    // `hardware-cardano/dist/Ledger.d.ts`), and a subpath-only pattern lets exactly that fall
+    // through to node resolution and drag the whole source tree in.
+    //
+    // ⚠️ These are relative to `baseUrl` — this directory — not to whichever config extends this
+    // one. Here so every consumer inherits it as Track C's remaining steps add packages.
+    "paths": {
+      "@evolution-sdk/evolution": ["vendor/evolution-sdk/packages/evolution/dist/index.d.ts"],
+      "@evolution-sdk/evolution/*": [
+        "vendor/evolution-sdk/packages/evolution/dist/*.d.ts",
+        "vendor/evolution-sdk/packages/evolution/dist/*/index.d.ts"
+      ],
+      "@evolution-sdk/review": ["vendor/evolution-sdk/packages/review/dist/index.d.ts"],
+      "@evolution-sdk/review/*": ["vendor/evolution-sdk/packages/review/dist/*.d.ts"],
+      "@evolution-sdk/hardware-cardano": ["vendor/evolution-sdk/packages/hardware-cardano/dist/index.d.ts"],
+      "@evolution-sdk/hardware-cardano/*": ["vendor/evolution-sdk/packages/hardware-cardano/dist/*.d.ts"],
+      "@evolution-sdk/plan": ["vendor/evolution-sdk/packages/plan/dist/index.d.ts"],
+      "@evolution-sdk/plan/*": ["vendor/evolution-sdk/packages/plan/dist/*.d.ts"],
+      "@evolution-sdk/canonical": ["vendor/evolution-sdk/packages/canonical/dist/index.d.ts"],
+      "@evolution-sdk/canonical/*": ["vendor/evolution-sdk/packages/canonical/dist/*.d.ts"],
+      "@evolution-sdk/cip113": ["vendor/evolution-sdk/packages/cip113/dist/index.d.ts"],
+      "@evolution-sdk/cip113/*": ["vendor/evolution-sdk/packages/cip113/dist/*.d.ts"],
+      "@evolution-sdk/cips": ["vendor/evolution-sdk/packages/cips/dist/index.d.ts"],
+      "@evolution-sdk/cips/*": ["vendor/evolution-sdk/packages/cips/dist/*.d.ts"],
+      "@evolution-sdk/dijkstra": ["vendor/evolution-sdk/packages/dijkstra/dist/index.d.ts"],
+      "@evolution-sdk/dijkstra/*": ["vendor/evolution-sdk/packages/dijkstra/dist/*.d.ts"],
+      "@evolution-sdk/cip139": ["vendor/evolution-sdk/packages/cip139/dist/index.d.ts"],
+      "@evolution-sdk/cip139/*": ["vendor/evolution-sdk/packages/cip139/dist/*.d.ts"],
+      "@evolution-sdk/cip30": ["vendor/evolution-sdk/packages/cip30/dist/index.d.ts"],
+      "@evolution-sdk/cip30/*": ["vendor/evolution-sdk/packages/cip30/dist/*.d.ts"],
+      "@evolution-sdk/backup-keys": ["vendor/evolution-sdk/packages/backup-keys/dist/index.d.ts"],
+      "@evolution-sdk/backup-keys/*": ["vendor/evolution-sdk/packages/backup-keys/dist/*.d.ts"]
+    },
+    "target": "ES2022",
+    "module": "NodeNext",
+    "incremental": true,
+    "removeComments": false,
+    "plugins": [{ "name": "@effect/language-service" }]
+  }
+}

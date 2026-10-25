@@ -1,0 +1,39 @@
+{
+  // ⚠️ Harness-local resolution, and it exists for one reason.
+  //
+  // The repo's `paths` map every `@evolution-sdk` subpath at `dist/*.d.ts`, which is right for
+  // `tsc` and wrong for `bun`: bun honours tsconfig `paths` AT RUN TIME, and a declaration file
+  // exports nothing. A harness that imports a workspace package which itself reaches a fork
+  // subpath therefore dies on `Export named 'X' not found in ... Brands.d.ts` — not in the
+  // harness's own imports, which is what makes it hard to place.
+  //
+  // Mapping the subpaths at SOURCE matches what node resolution already gives, so one copy of
+  // each fork package is loaded. `tsc` never reads this file; the root configs are what it reads.
+  //
+  //   bun run --tsconfig-override=./harness/tsconfig.json harness/<script>.ts
+  //
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@evolution-sdk/evolution": ["../vendor/evolution-sdk/packages/evolution/src/index.ts"],
+      "@evolution-sdk/evolution/*": [
+        "../vendor/evolution-sdk/packages/evolution/src/*.ts",
+        "../vendor/evolution-sdk/packages/evolution/src/*/index.ts"
+      ],
+      "@evolution-sdk/review": ["../vendor/evolution-sdk/packages/review/src/index.ts"],
+      "@evolution-sdk/review/*": ["../vendor/evolution-sdk/packages/review/src/*.ts"],
+      "@evolution-sdk/plan": ["../vendor/evolution-sdk/packages/plan/src/index.ts"],
+      "@evolution-sdk/plan/*": ["../vendor/evolution-sdk/packages/plan/src/*.ts"],
+      "@evolution-sdk/cip30": ["../vendor/evolution-sdk/packages/cip30/src/index.ts"],
+      "@evolution-sdk/cip30/*": ["../vendor/evolution-sdk/packages/cip30/src/*.ts"],
+      "@evolution-sdk/cip113": ["../vendor/evolution-sdk/packages/cip113/src/index.ts"],
+      "@evolution-sdk/cip113/*": ["../vendor/evolution-sdk/packages/cip113/src/*.ts"],
+      "@evolution-sdk/cip139": ["../vendor/evolution-sdk/packages/cip139/src/index.ts"],
+      "@evolution-sdk/cip139/*": ["../vendor/evolution-sdk/packages/cip139/src/*.ts"],
+      "@evolution-sdk/cips": ["../vendor/evolution-sdk/packages/cips/src/index.ts"],
+      "@evolution-sdk/cips/*": ["../vendor/evolution-sdk/packages/cips/src/*.ts"],
+      "@evolution-sdk/canonical": ["../vendor/evolution-sdk/packages/canonical/src/index.ts"],
+      "@evolution-sdk/canonical/*": ["../vendor/evolution-sdk/packages/canonical/src/*.ts"]
+    }
+  }
+}

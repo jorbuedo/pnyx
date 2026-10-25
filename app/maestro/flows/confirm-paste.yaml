@@ -1,0 +1,10 @@
+appId: uk.pxkq.pnyx.dev
+---
+# iOS shows "Paste | AutoFill" popup at ~y=78% after pasteText event.
+# Tap the "Paste" button to actually paste.
+- tapOn:
+    point: "15%,78%"
+- waitForAnimationToEnd:
+    timeout: 800
+- takeScreenshot:
+    path: /tmp/proto-diff/after-confirm-paste

@@ -1,0 +1,76 @@
+# E2E Test: Social Login Navigation
+#
+# Tests the social login screen navigation from onboarding.
+# Verifies that the social login screen loads correctly and displays
+# all social provider options (Google, Email, Twitter).
+#
+# Navigation: Init -> Accept Terms -> Returning User -> Onboarding Index -> Social Login
+#
+# Note: This test only validates navigation and UI elements.
+# It does NOT complete actual social authentication (requires external OAuth).
+#
+# Tags: onboarding, social, regression
+#
+# Prerequisites:
+#   - Fresh app state (no existing wallet)
+
+appId: ${MAESTRO_APP_ID}
+tags:
+  - onboarding
+  - social
+  - regression
+env:
+  BUILD_TYPE: ${BUILD_TYPE}
+---
+# Start fresh
+- runFlow: ../../utils/clear-and-launch.yaml
+
+# Accept terms, skip analytics, set up PIN, skip biometrics, choose "Returning User"
+# After this, we're on the onboarding index screen
+- runFlow: ../../utils/accept-terms.yaml
+
+# Verify we're on the onboarding index screen
+- assertVisible:
+    id: "setup-social-login-button"
+
+# Take screenshot of onboarding index
+- takeScreenshot: screenshots/social-login-onboarding-index
+
+# === NAVIGATE TO SOCIAL LOGIN ===
+# Tap on "Social Login" button
+- tapOn:
+    id: "setup-social-login-button"
+
+# Wait for social login screen to load
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "social-login-google-button"
+    timeout: 10000
+
+# === VERIFY SOCIAL LOGIN OPTIONS ===
+# Verify Google login button is visible
+- assertVisible:
+    id: "social-login-google-button"
+
+# Verify Email login button is visible
+- assertVisible:
+    id: "social-login-email-button"
+
+# Verify Twitter/X login button is visible
+- assertVisible:
+    id: "social-login-twitter-button"
+
+# Take screenshot of social login screen
+- takeScreenshot: screenshots/social-login-screen
+
+# === NAVIGATE BACK ===
+# Go back to onboarding index
+- tapOn:
+    id: "back-button"
+
+# Verify we're back on onboarding index
+- extendedWaitUntil:
+    visible:
+      id: "setup-social-login-button"
+    timeout: 5000

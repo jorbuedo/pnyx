@@ -1,0 +1,207 @@
+# E2E Test: Pre-seeded Wallet - Send Cardano (Full Transaction)
+#
+# Tests the complete Cardano send flow from the dashboard in a pre-seeded wallet.
+# Sends ADA to a test address and verifies success.
+#
+# Navigation: Dashboard -> Send -> Recipient -> Save Contact -> Amount -> Review -> Sign -> Success
+#
+# Note: This test performs a REAL transaction on mainnet.
+# Requires funds in the wallet (minimum ~5 ADA for send + fees).
+#
+# Tags: preseed, send
+#
+# Prerequisites:
+#   - App built with `eas build --profile e2e-preseed`
+#   - BUILD_TYPE=standalone (no Metro connection needed)
+
+appId: ${MAESTRO_APP_ID}
+tags:
+  - preseed
+  - send
+env:
+  BUILD_TYPE: ${BUILD_TYPE}
+  WALLET_PASSWORD: ${MAESTRO_WALLET_PASSWORD}
+  # Test receive address (mainnet)
+  RECEIVE_ADDRESS: addr1qxtcv39gu0l0n9hyh5kj07v77z2zq8nepg9jc2mh4l8vndc09rnpe43mluqpenmjer25mmuy3cmddvdn07qglcuwxs8q7qxqnx
+---
+# Launch app (pre-seeded wallet will be auto-restored)
+- launchApp
+
+# === DASHBOARD READY CHECK ===
+# Wait for dashboard to load with wallet
+- extendedWaitUntil:
+    visible:
+      id: "account-card"
+    timeout: 30000
+
+# Wait for wallet to sync - balance appears when sync completes
+- extendedWaitUntil:
+    visible:
+      id: "account-card-balance"
+    timeout: 60000
+
+# Take screenshot of synced dashboard
+- takeScreenshot: screenshots/preseed-send-dashboard
+
+# === TAP SEND BUTTON ===
+# Tap the send button on the dashboard
+- tapOn:
+    id: "send-button"
+
+# Wait for animations to settle
+- waitForAnimationToEnd
+
+# === VERIFY SEND RECIPIENT SCREEN ===
+# Wait for send screen to load - recipient input should be visible
+- extendedWaitUntil:
+    visible:
+      id: "recipient-input"
+    timeout: 10000
+
+# Verify continue button is available (but disabled without address)
+- assertVisible:
+    id: "continue-button"
+
+# Take screenshot of send recipient screen
+- takeScreenshot: screenshots/preseed-send-recipient-screen
+
+# === ENTER TEST ADDRESS ===
+# Enter the test Cardano mainnet address
+- tapOn:
+    id: "recipient-input"
+
+- inputText: ${RECEIVE_ADDRESS}
+
+# Dismiss keyboard by pressing Enter/Return
+- pressKey: Enter
+
+# Wait for address to validate
+- waitForAnimationToEnd
+
+# === VERIFY DETECTED NETWORK ===
+# Wait for and verify "Detected: Cardano" helper text
+- extendedWaitUntil:
+    visible:
+      text: "Detected: Cardano"
+    timeout: 5000
+
+# Tap continue to proceed (goes to address-details if new contact, or amount if known)
+- tapOn:
+    id: "continue-button"
+
+# Wait for animations to settle
+- waitForAnimationToEnd
+
+# === SAVE CONTACT (if address-details screen appears) ===
+# If contact already exists, this screen is skipped and we go directly to amount
+- runFlow:
+    when:
+      visible:
+        id: "contact-name-input"
+    commands:
+      # Take screenshot of address details screen
+      - takeScreenshot: screenshots/preseed-send-address-details
+
+      # Enter a name for the contact
+      - tapOn:
+          id: "contact-name-input"
+
+      - inputRandomPersonName
+
+      # Dismiss keyboard
+      - pressKey: Enter
+
+      # Wait for input to register
+      - waitForAnimationToEnd
+
+      # Tap save to save the contact and proceed to amount screen
+      - tapOn:
+          id: "save-contact-button"
+
+      # Wait for animations to settle
+      - waitForAnimationToEnd
+
+# === VERIFY SEND AMOUNT SCREEN ===
+# Wait for amount screen to load - next button should be visible
+- extendedWaitUntil:
+    visible:
+      id: "next-button"
+    timeout: 10000
+
+# Take screenshot of send amount screen
+- takeScreenshot: screenshots/preseed-send-amount-screen
+
+# === ENTER AMOUNT ===
+# Tap on amount input to focus it
+- tapOn:
+    id: "amount-input"
+
+# Enter 2.95 ADA
+- inputText: "2.95"
+
+# Wait for amount to register
+- waitForAnimationToEnd
+
+# Take screenshot with amount entered
+- takeScreenshot: screenshots/preseed-send-amount-entered
+
+# Tap Next to proceed to review screen
+- tapOn:
+    id: "next-button"
+
+# Wait for fee estimation and navigation
+- waitForAnimationToEnd
+
+# === VERIFY REVIEW SCREEN ===
+# Wait for review screen to load
+- extendedWaitUntil:
+    visible:
+      id: "reviewTx-confirmButton"
+    timeout: 30000
+
+# Take screenshot of review screen
+- takeScreenshot: screenshots/preseed-send-review
+
+# Tap Confirm to proceed to signing
+- tapOn:
+    id: "reviewTx-confirmButton"
+
+# Wait for signing overlay to appear
+- waitForAnimationToEnd
+
+# === ENTER PASSWORD AND SIGN ===
+# Wait for password input
+- extendedWaitUntil:
+    visible:
+      id: "signing-password-input"
+    timeout: 10000
+
+# Enter wallet password
+- tapOn:
+    id: "signing-password-input"
+
+- inputText: ${WALLET_PASSWORD}
+
+# Dismiss keyboard
+- pressKey: Enter
+
+# Wait for input to register
+- waitForAnimationToEnd
+
+# Tap Sign button
+- tapOn:
+    id: "signing-sign-button"
+
+# Wait for transaction to be signed and submitted
+# This may take a while on testnet
+- waitForAnimationToEnd
+
+# === VERIFY SUCCESS ===
+# Wait for navigation back to dashboard (success)
+- extendedWaitUntil:
+    visible:
+      id: "account-card"
+    timeout: 60000
+
+# Take screenshot of dashboard after send
+- takeScreenshot: screenshots/preseed-send-complete

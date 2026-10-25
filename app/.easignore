@@ -1,0 +1,28 @@
+# EAS Build ignore file
+# Same as .gitignore but includes eas.json (needed by EAS)
+
+# Dependencies
+node_modules/
+
+# Local working env (copied from env/.env.<variant> at build time)
+/.env
+
+# Native builds (leading slash = only root-level, not nested android/ios in modules)
+/android/
+/ios/
+
+# Expo
+.expo/
+dist/
+expo-env.d.ts
+
+# Extension build output
+extension-dist/
+extension-dev/
+
+# Editor
+.idea/
+*.swp
+
+# OS
+.DS_Store

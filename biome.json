@@ -1,0 +1,125 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.3.11/schema.json",
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 120,
+    "attributePosition": "auto"
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "suspicious": {
+        "noRedeclare": "off",
+        "useAdjacentOverloadSignatures": "off",
+        "useIterableCallbackReturn": "off",
+        "noUnknownAtRules": "off"
+      },
+      "correctness": {
+        "noPrecisionLoss": "off",
+        "noUnusedFunctionParameters": "off",
+        "noEmptyPattern": "off",
+        "useExhaustiveDependencies": {
+          "level": "error",
+          "options": {
+            "hooks": [
+              {
+                "name": "useLatestRef",
+                "stableResult": true
+              }
+            ]
+          }
+        }
+      },
+      "complexity": {
+        "noThisInStatic": "off"
+      },
+      "performance": {
+        "noAccumulatingSpread": "off"
+      },
+      "a11y": {
+        "useAltText": "off"
+      },
+      "style": {
+        "useNumberNamespace": "off",
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "sonner": {
+                "message": "Import from '@/platform/sonner' instead of 'sonner'."
+              },
+              "sonner-native": {
+                "message": "Import from '@/platform/sonner' instead of 'sonner-native'."
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
+      "semicolons": "asNeeded",
+      "trailingCommas": "all",
+      "arrowParentheses": "always",
+      "bracketSpacing": false
+    }
+  },
+  "json": {
+    "formatter": {
+      "enabled": true
+    }
+  },
+  "files": {
+    "includes": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.js",
+      "**/*.jsx",
+      "**/*.json",
+      "**/*.mjs",
+      "!services/**/*",
+      "!packages/dapp-connector/scripts/**/*",
+      "!contract/managed/**/*",
+      "!harness/**/*",
+      "!packages/tx-review/midnight-facts-fixture.json",
+      "!packages/midnight-native/rust/fixtures/**/*",
+      "!app/google-services.json",
+      "!app/google-services.dev.json",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/build",
+      "!**/target",
+      "!**/*.d.ts",
+      "!**/.tsbuildinfo",
+      "!**/coverage",
+      "!**/.output",
+      "!**/.wxt",
+      "!**/.expo",
+      "!**/extension-dist",
+      "!**/extension-dev",
+      "!**/android",
+      "!**/ios",
+      "!**/playwright-report",
+      "!**/test-results",
+      "!**/test-results.json",
+      "!**/translations_*.ts",
+      "!**/.claude",
+      "!product"
+    ]
+  }
+}

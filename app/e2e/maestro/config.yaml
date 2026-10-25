@@ -1,0 +1,4 @@
+# Maestro configuration
+# Include flows from all subdirectories
+flows:
+  - "flows/**"

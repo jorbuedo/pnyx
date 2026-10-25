@@ -1,0 +1,13 @@
+[package]
+name = "proxy-bench"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = {version = "1", features = ["rt-multi-thread", "net", "io-util", "macros", "time", "signal"]}
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

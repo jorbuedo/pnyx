@@ -1,0 +1,37 @@
+[Unit]
+Description=Pnyx token-holding proxy (injects the API credentials no build may carry)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=pnyxproxy
+Group=pnyxproxy
+ExecStart=/usr/local/bin/pnyx-proxy /etc/pnyx-proxy/proxy.toml
+
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+# It holds credentials in memory and writes nothing. Both paths are read-only so a future change
+# that wants to write has to say so.
+ReadOnlyPaths=/etc/pnyx-proxy
+# The credential file is the whole asset. Keep it out of every other unit's view.
+InaccessiblePaths=-/etc/sponsor
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=pnyx-proxy
+
+[Install]
+WantedBy=multi-user.target

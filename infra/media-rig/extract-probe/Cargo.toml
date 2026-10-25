@@ -1,0 +1,22 @@
+[package]
+name = "extract-probe"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pallas-hardano = "0.32"
+pallas-traverse = "0.32"
+pallas-primitives = "0.32"
+hex = "0.4"
+serde_json = "1"
+
+[[bin]]
+name = "probe"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
+
+[[bin]]
+name = "cip68"
+path = "src/bin/cip68.rs"

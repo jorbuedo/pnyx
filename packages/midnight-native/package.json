@@ -1,0 +1,9 @@
+{
+  "name": "@pnyx/midnight-native",
+  "version": "0.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "peerDependencies": {
+    "expo-modules-core": "*"
+  }
+}

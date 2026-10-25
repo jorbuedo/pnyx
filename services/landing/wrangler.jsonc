@@ -1,0 +1,24 @@
+{
+  // The public landing site: **static assets only, with no Worker script at all.**
+  //
+  // There is deliberately no `main`. Workers static assets are free, unlimited and never invoke a
+  // Worker, so every request this deployment answers — the page, the screenshots, the release
+  // manifest, the apex redirect in `public/_redirects` — costs nothing and runs no code.
+  //
+  // The one thing that could not be an asset is a ~225 MB build (assets cap at 25 MiB). Those live
+  // in R2 `pnyx-releases` and are served by that bucket's own custom domain,
+  // `downloads.pxkq.uk`, so they do not need a Worker either. See `infra/releases/README.md`.
+  //
+  // ⚠️ Adding `main` back would turn a free page into a billed one. Do not, without a reason that
+  // is written down here.
+  //
+  // ⚠️ The custom domain claims the WHOLE of `www.pxkq.uk`, not just `/pnyx` — a custom domain
+  // cannot be scoped to a path. Recorded in `infra/cloudflare/README.md`.
+  "name": "pnyx-landing",
+  "compatibility_date": "2026-07-18",
+  "observability": {"enabled": true},
+  "routes": [{"pattern": "www.pxkq.uk", "custom_domain": true}],
+  // `public/pnyx.html` is served at `/pnyx`; `html_handling` resolves the extension and the
+  // trailing slash, so `/pnyx` is canonical and needs no redirect of its own.
+  "assets": {"directory": "./public"}
+}

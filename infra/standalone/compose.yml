@@ -1,0 +1,82 @@
+# Standalone local Midnight network: node (dev preset, genesis-funded test wallets) +
+# indexer + proof server. Mirrors the official example-counter standalone.yml, pinned to
+# the versions our stack is built against (ledger 8.1.2 / indexer API v4 / midnight-js 4.1.1).
+# Run: podman-compose -f infra/standalone/compose.yml up -d
+services:
+  proof-server:
+    container_name: pnyx-standalone-proof-server
+    # 8.1.0 is the SAME image `latest` resolves to today (both are digest
+    # sha256:801bbc0340e9e96f16735f77b523f23c7459e3359842f7c79c2c53f4e994d531, pushed 2026-05-13),
+    # named explicitly because the newest published tags are 9.0.0-rc.7 and 10.0.0-alpha.1: the next
+    # `latest` push crosses the ledger-8/9 boundary and would silently stop matching our crate pins.
+    # There is no 8.1.1/8.1.2 proof-server image — 8.1.0 is the last of the ledger-8 line.
+    image: docker.io/midnightntwrk/proof-server:8.1.0
+    command: ['midnight-proof-server -v']
+    ports:
+      - '6300:6300'
+    environment:
+      RUST_BACKTRACE: 'full'
+      PORT: '6300'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:6300/version']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  node:
+    container_name: pnyx-standalone-node
+    # node 1.0.2 = ledger 8.1.2 / onchain-runtime 3.1.1 — the SAME pins as packages/midnight-native
+    # and the JS stack's ledger-v8. An older node (0.22.3 = ledger 8.0.2) rejects native-rail txs
+    # with 1010 Custom 104 = Transcript(Execution(OutOfGas)): the 3.1.0 cost model declares a
+    # smaller gas budget than the 8.0.2 runtime charges on replay.
+    # NOT 1.0.300: that one carries an on-chain runtime upgrade (spec_version 1000300, new host fn
+    # ext_ledger_8_bridge_apply_transaction_version_2) and a regenerated devnet genesis, which the
+    # 4.3.x indexer below was not built against. 1.0.2 is binary-only and keeps the runtime.
+    image: docker.io/midnightntwrk/midnight-node:1.0.2
+    ports:
+      - '9944:9944'
+    environment:
+      CFG_PRESET: 'dev'
+      SIDECHAIN_BLOCK_BENEFICIARY: '04bcf7ad3be7a5c790460be82a713af570f22e0f801f6659ab8e84a52be6969e'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9944/health']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  indexer:
+    container_name: pnyx-standalone-indexer
+    # 4.3.x is the node-1.x indexer line (API v4 unchanged). One architecture per tag, not a
+    # multi-arch manifest: 4.3.5 is amd64-only, 4.3.5-arm64 is arm64-only. `compose.sh` picks the
+    # right one from `uname -m`; the default here keeps a bare `podman-compose` usable on amd64.
+    image: docker.io/midnightntwrk/indexer-standalone:${PNYX_INDEXER_TAG:-4.3.5}
+    ports:
+      - '8088:8088'
+    environment:
+      RUST_LOG: 'indexer=info,chain_indexer=info,indexer_api=info,wallet_indexer=info,indexer_common=info,fastrace_opentelemetry=off,info'
+      APP__APPLICATION__NETWORK_ID: 'undeployed'
+      APP__INFRA__NODE__URL: 'ws://node:9944'
+      # 4.3.x requires spo_node config even when SPO features are unused; the config.yaml
+      # itself documents the non-empty placeholder for local standalone use.
+      APP__INFRA__SPO_NODE__URL: 'ws://node:9944'
+      APP__INFRA__SPO_NODE__BLOCKFROST_ID: 'dummy-not-using-spo'
+      APP__INFRA__STORAGE__PASSWORD: 'indexer'
+      APP__INFRA__PUB_SUB__PASSWORD: 'indexer'
+      APP__INFRA__LEDGER_STATE_STORAGE__PASSWORD: 'indexer'
+      APP__INFRA__SECRET: '303132333435363738393031323334353637383930313233343536373839303132'
+    healthcheck:
+      test: ['CMD-SHELL', 'cat /var/run/indexer-standalone/running']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    depends_on:
+      node:
+        condition: service_healthy
+    # The node reports healthy as soon as its RPC answers, which is before it has produced block 1 —
+    # and 4.3.x's spo-indexer exits immediately with "Cannot construct OnlineClientAtBlock: block
+    # number 1 not found" if it starts inside that window. `service_healthy` cannot express "has a
+    # block", so retry instead of trying to tighten the condition.
+    restart: on-failure

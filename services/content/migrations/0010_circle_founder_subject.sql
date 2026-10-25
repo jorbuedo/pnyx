@@ -1,0 +1,18 @@
+-- Which authenticated subject settled this circle's contract and asserted its founder leaf.
+--
+-- **Why the authority moves here from `author`.** Channel creation was gated on
+-- `membership.persona === circle.author` — a comparison of content-plane *labels*. That is sound as
+-- far as it goes (the caller's label comes from their authenticated subject, and labels are unique per
+-- circle), but it is anchored to a string chosen at row creation rather than to anything on chain.
+--
+-- This column anchors it to the deploy instead: only the creator can settle a circle's contract
+-- (`0009`, and the guard beside it), so the subject recorded here is the one that proved the deploy and
+-- named `founder_leaf` — the persona the constructor seats in `moderators`. Gating on it means channel
+-- authority belongs to whoever actually put the circle on chain.
+--
+-- ⚠️ **No new linkage.** This is a subject the service already holds as a member of this circle. It is
+-- deliberately *not* the persona commitment, which is what a per-member link table would have added.
+--
+-- Nullable, and NULL is legacy: a circle settled before this shipped, or never settled at all. Those
+-- fall back to the label comparison, which is what they have always used.
+ALTER TABLE circles ADD COLUMN founder_subject TEXT;

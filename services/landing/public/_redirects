@@ -1,0 +1,7 @@
+# Handled by the asset layer, which runs no Worker — this deployment has no script at all.
+# `/pnyx/` → `/pnyx` is already done by `html_handling`'s auto-trailing-slash.
+/    /pnyx    308
+
+# Builds briefly lived behind a Worker at `/pnyx/download/*` before the bucket got its own
+# custom domain. Kept so a link shared in that window still resolves.
+/pnyx/download/*    https://downloads.pxkq.uk/builds/:splat    301

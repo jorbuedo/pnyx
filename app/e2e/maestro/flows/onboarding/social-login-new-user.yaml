@@ -1,0 +1,77 @@
+# E2E Test: Social Login via New User Path
+#
+# Tests the social login screen navigation from the New User flow.
+# Verifies that the social login screen can be accessed from the
+# simplified new user onboarding path.
+#
+# Navigation: Init -> Accept Terms -> New User -> Social Button -> Social Login Screen
+#
+# Note: This test only validates navigation and UI elements.
+# It does NOT complete actual social authentication (requires external OAuth).
+#
+# Tags: onboarding, social, regression
+#
+# Prerequisites:
+#   - Fresh app state (no existing wallet)
+
+appId: ${MAESTRO_APP_ID}
+tags:
+  - onboarding
+  - social
+  - regression
+env:
+  BUILD_TYPE: ${BUILD_TYPE}
+---
+# Start fresh
+- runFlow: ../../utils/clear-and-launch.yaml
+
+# Accept terms, skip analytics, set up PIN, skip biometrics, choose "New User"
+# After this, we're on the new-user screen with quick-start and social options
+- runFlow: ../../utils/accept-terms-new-user.yaml
+
+# Verify we're on the new user screen
+- assertVisible:
+    id: "quick-start-button"
+
+- assertVisible:
+    id: "social-button"
+
+# Take screenshot of new user screen
+- takeScreenshot: screenshots/social-login-new-user-screen
+
+# === NAVIGATE TO SOCIAL LOGIN ===
+# Tap on "Social" button
+- tapOn:
+    id: "social-button"
+
+# Wait for social login screen to load
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "social-login-google-button"
+    timeout: 10000
+
+# === VERIFY SOCIAL LOGIN OPTIONS ===
+# Verify all social provider buttons are visible
+- assertVisible:
+    id: "social-login-google-button"
+
+- assertVisible:
+    id: "social-login-email-button"
+
+- assertVisible:
+    id: "social-login-twitter-button"
+
+# Take screenshot of social login screen
+- takeScreenshot: screenshots/social-login-from-new-user
+
+# === NAVIGATE BACK ===
+# Go back to new user screen
+- tapOn:
+    id: "back-button"
+
+# Verify we're back on new user screen
+- extendedWaitUntil:
+    visible:
+      id: "social-button"
+    timeout: 5000

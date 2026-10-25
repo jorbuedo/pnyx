@@ -1,0 +1,87 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+group = 'expo.modules.modelnative'
+version = '0.1.0'
+
+buildscript {
+  def expoModulesCorePlugin = new File(project(":expo-modules-core").projectDir.absolutePath, "ExpoModulesCorePlugin.gradle")
+  if (expoModulesCorePlugin.exists()) {
+    apply from: expoModulesCorePlugin
+    applyKotlinExpoModulesCorePlugin()
+  }
+
+  ext.safeExtGet = { prop, fallback ->
+    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+  }
+
+  ext.getKotlinVersion = {
+    if (ext.has("kotlinVersion")) {
+      ext.kotlinVersion()
+    } else {
+      ext.safeExtGet("kotlinVersion", "1.9.24")
+    }
+  }
+
+  repositories {
+    mavenCentral()
+    google()
+  }
+
+  dependencies {
+    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${getKotlinVersion()}")
+  }
+}
+
+android {
+  compileSdkVersion safeExtGet("compileSdkVersion", 35)
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+
+  kotlinOptions {
+    jvmTarget = JavaVersion.VERSION_17.majorVersion
+  }
+
+  namespace "expo.modules.modelnative"
+  defaultConfig {
+    minSdkVersion safeExtGet("minSdkVersion", 24)
+    targetSdkVersion safeExtGet("targetSdkVersion", 34)
+    versionCode 1
+    versionName "0.1.0"
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+repositories {
+  mavenCentral()
+  google()
+}
+
+dependencies {
+  implementation project(':expo-modules-core')
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${getKotlinVersion()}"
+  // ML Kit GenAI Prompt API — Gemini Nano through AICore. Approved by the dev lead
+  // 2026-07-31. Absent AICore (every emulator, non-flagship hardware) `checkStatus`
+  // reports UNAVAILABLE and the module reports the same.
+  //
+  // beta4 carries Kotlin 2.3 metadata, so it needs a 2.2+ compiler. That is forced on the
+  // root buildscript by app/plugins/with-kotlin-version.js — setting
+  // `android.kotlinVersion` here or in expo-build-properties does not move the compiler.
+  implementation "com.google.mlkit:genai-prompt:1.0.0-beta4"
+  // Constrained decoding. Unlike Apple's, ML Kit's schema is a compile-time Kotlin class:
+  // `GenerateTypedContentRequest` takes a `KClass`, and the processor generates the
+  // `GenerableProvider` that describes it. There is no runtime-schema entry point, which is
+  // why Generables.kt exists and why the module can only decode into shapes it compiled.
+  // Still alpha while genai-prompt is on beta4 — Generables.kt is the only thing that
+  // depends on it, and `generateStructured` is the only caller.
+  // Already a POM dependency of genai-prompt, so this only makes it compile-visible for
+  // Generables.kt. `genai-schema-compiler`, the KSP processor that would generate the
+  // provider from annotations, is deliberately not used — see Generables.kt.
+  implementation "com.google.mlkit:genai-schema:1.0.0-alpha1"
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1"
+}

@@ -1,0 +1,214 @@
+// handle.compact — one deploy per claimed name.
+//
+// Replaces the shared `names` map that `identity.compact` used to hold
+// (`docs/BOUNDED_STATE_ARCHITECTURE.md` §3.2). A registry keyed by name is unreadable once it has
+// entries — every read downloads the whole blob — and a write against a stale snapshot is rejected
+// `Custom error: 104` even for a name free in both views. So there is no registry.
+//
+// **Uniqueness is the chain's, not a map's.** `address = SHA-256(tagged_serialize(ContractDeploy
+// {initial_state, nonce}))` with `nonce = persistentHash(["pnyx:handle", name])`, so a second claim
+// of one name derives the same address and is refused as `ContractAlreadyDeployed`. Nothing is
+// downloaded to find out whether a name is taken.
+//
+// **The name sealed here is the canonical, case-folded spelling.** That is what makes `Alice` and
+// `alice` one name rather than two that look alike: both fold to the same bytes, so both derive this
+// address. The *display* spelling lives in `identity(C).primaryName`, and readers compare folded.
+//
+// ⚠️ **This contract inspects a name's LENGTH and nothing else about its content.** Charset, script
+// mixing, NFC and case are client rules (`@pnyx/contract-client/handle`), for the same reason the
+// handle length floor was never a charset check: Unicode tables are three orders beyond the constraint
+// budget and the circuit sees UTF-8 bytes, not characters. A name minted outside those rules is
+// *stranded* — bindable on chain, invisible to every reader, and its permit burnt. That is safe
+// because a rejected name occupies a **different address**, so it takes nothing from anyone.
+//
+// **What moderation can and cannot do.** `owner` is written non-zero by exactly one circuit, `bind`,
+// and only ever to a value derived in-circuit from the caller's own secret. So no authority can place
+// anyone else's identity there, and `moderate` writes `banned` alone. We can silence a name, hold it,
+// and let it go; we can never take one or give one away.
+//
+// **This template holds no authority of its own.** `moderate` spends a per-name capability minted by
+// `payment`, rather than proving a secret whose hash is baked in here. There is one of these contracts
+// per name, so a baked-in secret could only ever be rotated one transaction per name — a leak would be
+// unrecoverable at any real namespace size. Deriving the authority from `payment` instead means the
+// whole namespace rotates with a single `rotateAdmin` there, and this template needs no rotation path,
+// no admin field and no witness. Measured at 4,651 rows against the preimage's 4,181, both K13.
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+/// The canonical name, folded and NFC-composed. Sealed, and part of the address — it is what the
+/// address *means* rather than something a caller asserts.
+export sealed ledger name: Bytes<32>;
+
+/// The `PaymentContract` whose mint the permit colors derive from.
+///
+/// A constructor argument rather than a compiled-in constant so one template serves every network:
+/// it lands in the initial state and therefore in the derived address, which keeps the derivation
+/// deterministic per network without a per-network build.
+///
+/// ⚠️ Frozen once handles exist. A successor `PaymentContract` mints a different color that this
+/// template will not accept, and pre-deploying spare generations does not help — their code would have
+/// to be written today.
+export sealed ledger payment: ContractAddress;
+
+/// The mint domain of this name's moderation capability, `persistentHash(["pnyx:moderate", name])`.
+///
+/// Derived in the constructor rather than taken as an argument, so it cannot disagree with `name` — and
+/// sealed, which puts it in the address and makes it unforgeable without a second field to check. A
+/// client derives the same value alongside the address. This is the split `ZOwnablePK` uses: seal the
+/// per-instance domain, and keep the authority itself mutable — over in `payment`, where it lives.
+export sealed ledger moderateDomain: Bytes<32>;
+
+/// The identity holding this name, or all-zero for unclaimed.
+///
+/// Written non-zero only by `bind`, only to `identityCommitment(identitySk())`, and only once —
+/// `rebind` moves it on the current owner's authority. That is what makes the moderation power
+/// negative by construction.
+export ledger owner: Bytes<32>;
+
+/// Our moderation hold. Reversible, and it takes nothing from anyone: a banned name stops resolving,
+/// and `bind` refuses it, but `owner` is untouched.
+///
+/// ⚠️ An earlier draft had `moderate` zero the owner. That returned the name to the open market and
+/// reduced its holder to one racer among many, so ban -> reopen -> accomplice-races was a working
+/// theft. Not touching `owner` closes it: there is no reopen.
+export ledger banned: Boolean;
+
+/// The owner's own permanent exit. A separate flag rather than `owner == 0`, or a released name would
+/// silently become claimable again.
+export ledger burned: Boolean;
+
+witness identitySk(): Bytes<32>;
+
+/// The canonical name's bytes, supplied by the caller and verified here to recompose to `name`.
+///
+/// A witness rather than an in-circuit `name as Vector<32, Uint<8>>` cast because the cast costs
+/// ~10,800 rows — a whole K step — where this costs ~680. Measured both ways
+/// (`docs/BOUNDED_STATE_ARCHITECTURE.md` §3.5).
+witness nameLimbs(): Vector<32, Uint<8>>;
+
+/// `C` — the public Pnyx identity. Domain-separated so the account secret cannot collide with a
+/// persona commitment or any other derivation from the same seed.
+circuit identityCommitment(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "pnyx:id"), sk]);
+}
+
+/// This name's price tier, from its byte length. Zero is the most expensive.
+///
+/// Boundaries: t0 1-2 · t1 3 · t2 4 · t3 5-6 · t4 7-10 · t5 11-22 · t6 23-31. Fine at the short end
+/// because a name's value grows geometrically as it shortens. Pinned against the client by
+/// `handle-contract-parity.test.ts`, which reads the probe indices out of this circuit.
+///
+/// ⚠️ **`b[31] == 0` is a canonicality guard, not a length rule, and it is load-bearing.** The
+/// recomposition below is field arithmetic ranging over 2^256 while the modulus is ~0.45 * 2^256,
+/// leaving room for exactly one wrap: limbs recomposing to `name + p` are *different bytes with the
+/// same field element*, and the carries move the low limbs the tier reads — buying a premium name at a
+/// cheap tier. Forcing the top limb to zero caps the value at 2^248, so no wrap is representable. One
+/// comparison instead of a range check, at the cost of a 31-byte name ceiling.
+///
+/// **Little-endian**, matching `Bytes<32> as Field`. Big-endian would put the name's first byte in the
+/// most significant position and overflow the modulus for every name starting `t`-`z`.
+///
+/// Length is the index of the first zero byte, which holds because names are left-aligned and UTF-8
+/// never contains 0x00. A name with an interior zero measures short — and that direction is safe,
+/// because short tiers are the expensive ones, so a malformed name overpays rather than underpays.
+circuit nameTier(): Uint<8> {
+  const b = disclose(nameLimbs());
+  const recomposed: Field =
+    ((((((((((((((((((((((((((((((((b[31] as Field)
+      * 256 + (b[30] as Field)) * 256 + (b[29] as Field)) * 256 + (b[28] as Field))
+      * 256 + (b[27] as Field)) * 256 + (b[26] as Field)) * 256 + (b[25] as Field))
+      * 256 + (b[24] as Field)) * 256 + (b[23] as Field)) * 256 + (b[22] as Field))
+      * 256 + (b[21] as Field)) * 256 + (b[20] as Field)) * 256 + (b[19] as Field))
+      * 256 + (b[18] as Field)) * 256 + (b[17] as Field)) * 256 + (b[16] as Field))
+      * 256 + (b[15] as Field)) * 256 + (b[14] as Field)) * 256 + (b[13] as Field))
+      * 256 + (b[12] as Field)) * 256 + (b[11] as Field)) * 256 + (b[10] as Field))
+      * 256 + (b[9] as Field)) * 256 + (b[8] as Field)) * 256 + (b[7] as Field))
+      * 256 + (b[6] as Field)) * 256 + (b[5] as Field)) * 256 + (b[4] as Field))
+      * 256 + (b[3] as Field)) * 256 + (b[2] as Field)) * 256 + (b[1] as Field))
+      * 256 + (b[0] as Field));
+  assert(recomposed == (name as Field), "limbs do not recompose to the sealed name");
+  assert(b[31] == 0, "handle must be at most 31 bytes");
+  assert(b[0] != 0, "handle must not be empty");
+  return (b[2] == 0 ? 0 : (b[3] == 0 ? 1 : (b[4] == 0 ? 2 : (b[6] == 0 ? 3 : (b[10] == 0 ? 4 : (b[22] == 0 ? 5 : 6)))))) as Uint<8>;
+}
+
+constructor(n: Bytes<32>, pay: ContractAddress) {
+  name = disclose(n);
+  payment = disclose(pay);
+  moderateDomain = persistentHash<Vector<2, Bytes<32>>>([pad(32, "pnyx:moderate"), disclose(n)]);
+  owner = pad(32, "");
+  banned = false;
+  burned = false;
+}
+
+/// Claim this name, by spending a permit of exactly its tier.
+///
+/// **Anyone may bind an unbound shell** — the deployer has no privilege, because for the address to
+/// enforce uniqueness the initial state can hold nothing claimant-specific, and Midnight has no
+/// `msg.sender`. What stops a land-grab is the permit, not a length floor.
+///
+/// **Exact tier, not tier-or-better.** Comparing the permit against every tier's color costs a
+/// `tokenType` call each (~3,970 rows) and a whole K step; selecting the tier's domain among constants
+/// and calling `tokenType` once does not. What that gives up is only spending a premium permit on a
+/// cheap name — same-tier reuse, which is what makes a race loser's permit still useful, is unaffected.
+///
+/// **The permit is unshielded**, which costs 6,544 fewer rows than a shielded one and needs no
+/// contract-directed shielded coin flow — machinery the device rail does not have. The privacy that
+/// buys is recovered off-chain by delivering the permit to a fresh single-use address (§11 item 4b).
+export circuit bind(): [] {
+  const tier = nameTier();
+  assert(!burned, "handle burned");
+  assert(!banned, "handle banned");
+  assert(owner == pad(32, ""), "handle already bound");
+  const domain =
+    tier == 0 ? pad(32, "pnyx:permit:t0") :
+    tier == 1 ? pad(32, "pnyx:permit:t1") :
+    tier == 2 ? pad(32, "pnyx:permit:t2") :
+    tier == 3 ? pad(32, "pnyx:permit:t3") :
+    tier == 4 ? pad(32, "pnyx:permit:t4") :
+    tier == 5 ? pad(32, "pnyx:permit:t5") : pad(32, "pnyx:permit:t6");
+  receiveUnshielded(tokenType(domain, payment), 1);
+  owner = disclose(identityCommitment(identitySk()));
+}
+
+/// Hand the name over. Authorised by the **current** owner, and the destination is their choice.
+///
+/// The rebind permit is per **name**, minted by us on request and never purchasable: pricing it per
+/// name would need a `prices` map keyed by name — the growing structure this design exists to remove —
+/// and making it purchasable would reopen snipe-and-resell.
+///
+/// A name pushed at someone who never points back is inert, because validity is bidirectional
+/// (`identity(C).primaryName` must name it too), so there is no consent step and no `pendingOwner`.
+export circuit rebind(newOwner: Bytes<32>): [] {
+  assert(!burned, "handle burned");
+  assert(!banned, "handle banned");
+  assert(owner == disclose(identityCommitment(identitySk())), "not your handle");
+  receiveUnshielded(tokenType(persistentHash<Vector<2, Bytes<32>>>([pad(32, "pnyx:rebind"), name]), payment), 1);
+  owner = disclose(newOwner);
+}
+
+/// Our moderation hold. Writes `banned` and nothing else — there is no `owner` assignment in this
+/// circuit, which is what bounds the power by absence of a parameter rather than by a promise.
+///
+/// Authorised by **holding** this name's moderation capability, which `payment.grantModeratePermit`
+/// mints. The token is taken straight back, so one mint serves this name for ever and a ban is not
+/// rationed by a mint — and possession is what the ledger signature-checks, since spending an
+/// unshielded input requires the owner's signature over it.
+///
+/// Also how a name is **reserved**: `moderate(true)` on a never-claimed shell needs no *claim* permit
+/// and stays reversible, where pre-claiming and burning would be permanent. ⚠️ Reserve before that
+/// tier's first permit exists, or there is a window in which the shell can be bound (§8.2).
+export circuit moderate(ban: Boolean, back: Either<ContractAddress, UserAddress>): [] {
+  const cap = tokenType(moderateDomain, payment);
+  receiveUnshielded(cap, 1);
+  sendUnshielded(cap, 1, disclose(back));
+  banned = disclose(ban);
+}
+
+/// The owner's own exit. Permanent, and not reversible by us — `bind` refuses a burned name and
+/// `moderate` cannot clear this.
+export circuit revoke(): [] {
+  assert(owner == disclose(identityCommitment(identitySk())), "not your handle");
+  burned = true;
+}

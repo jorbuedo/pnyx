@@ -1,0 +1,20 @@
+[Unit]
+Description=IPFS (kubo) daemon — the media crawl's last-resort gateway (+4.3pp measured)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=<user>
+Group=<user>
+Environment=IPFS_PATH=/home/<user>/media-rig/ipfs
+ExecStart=/usr/local/bin/ipfs daemon --routing=dhtclient
+Restart=always
+RestartSec=20
+Nice=15
+MemoryHigh=700M
+MemoryMax=1200M
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

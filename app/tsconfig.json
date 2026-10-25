@@ -1,0 +1,45 @@
+{
+  "extends": "../tsconfig.app.json",
+  "compilerOptions": {
+    "strict": true,
+    "jsx": "react-jsx",
+    "types": ["bun", "expo/types"],
+    "paths": {
+      "@/*": ["./src/*"],
+      // ⚠️ **`paths` REPLACES the inherited map, it does not merge with it.** Declaring `@/*` here
+      // dropped tsconfig.base.json's `@evolution-sdk/*` entries for this project alone, so the
+      // fork resolved through its package `exports` to `./src/*.ts` — its SOURCE, checked under
+      // our strictness, which its own tsconfig does not set. 296 errors in code that is green in
+      // its own repo. It stayed hidden because `tsc -b` is incremental: the step-4 and step-5
+      // swaps that first gave this project a path to the fork did not rebuild it.
+      // Keep these in step with tsconfig.base.json.
+      "@evolution-sdk/evolution": ["../vendor/evolution-sdk/packages/evolution/dist/index.d.ts"],
+      "@evolution-sdk/evolution/*": [
+        "../vendor/evolution-sdk/packages/evolution/dist/*.d.ts",
+        "../vendor/evolution-sdk/packages/evolution/dist/*/index.d.ts"
+      ],
+      "@evolution-sdk/review": ["../vendor/evolution-sdk/packages/review/dist/index.d.ts"],
+      "@evolution-sdk/review/*": ["../vendor/evolution-sdk/packages/review/dist/*.d.ts"],
+      "@evolution-sdk/hardware-cardano": ["../vendor/evolution-sdk/packages/hardware-cardano/dist/index.d.ts"],
+      "@evolution-sdk/hardware-cardano/*": ["../vendor/evolution-sdk/packages/hardware-cardano/dist/*.d.ts"],
+      "@evolution-sdk/plan": ["../vendor/evolution-sdk/packages/plan/dist/index.d.ts"],
+      "@evolution-sdk/plan/*": ["../vendor/evolution-sdk/packages/plan/dist/*.d.ts"],
+      "@evolution-sdk/canonical": ["../vendor/evolution-sdk/packages/canonical/dist/index.d.ts"],
+      "@evolution-sdk/canonical/*": ["../vendor/evolution-sdk/packages/canonical/dist/*.d.ts"],
+      "@evolution-sdk/cip113": ["../vendor/evolution-sdk/packages/cip113/dist/index.d.ts"],
+      "@evolution-sdk/cip113/*": ["../vendor/evolution-sdk/packages/cip113/dist/*.d.ts"],
+      "@evolution-sdk/cips": ["../vendor/evolution-sdk/packages/cips/dist/index.d.ts"],
+      "@evolution-sdk/cips/*": ["../vendor/evolution-sdk/packages/cips/dist/*.d.ts"],
+      "@evolution-sdk/dijkstra": ["../vendor/evolution-sdk/packages/dijkstra/dist/index.d.ts"],
+      "@evolution-sdk/dijkstra/*": ["../vendor/evolution-sdk/packages/dijkstra/dist/*.d.ts"],
+      "@evolution-sdk/cip139": ["../vendor/evolution-sdk/packages/cip139/dist/index.d.ts"],
+      "@evolution-sdk/cip139/*": ["../vendor/evolution-sdk/packages/cip139/dist/*.d.ts"],
+      "@evolution-sdk/cip30": ["../vendor/evolution-sdk/packages/cip30/dist/index.d.ts"],
+      "@evolution-sdk/cip30/*": ["../vendor/evolution-sdk/packages/cip30/dist/*.d.ts"],
+      "@evolution-sdk/backup-keys": ["../vendor/evolution-sdk/packages/backup-keys/dist/index.d.ts"],
+      "@evolution-sdk/backup-keys/*": ["../vendor/evolution-sdk/packages/backup-keys/dist/*.d.ts"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
+  "exclude": ["node_modules", "dist", ".expo", "metro.config.js", "modules"]
+}

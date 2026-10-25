@@ -1,0 +1,79 @@
+# E2E Test: Pre-seeded Wallet - Receive Flow
+#
+# Tests the receive functionality from the dashboard in a pre-seeded wallet.
+# Verifies that tapping the receive button opens the receive screen with
+# QR code and wallet address displayed.
+#
+# Tags: preseed, receive, smoke
+#
+# Prerequisites:
+#   - App built with `eas build --profile e2e-preseed`
+#   - BUILD_TYPE=standalone (no Metro connection needed)
+
+appId: ${MAESTRO_APP_ID}
+tags:
+  - preseed
+  - receive
+  - smoke
+env:
+  BUILD_TYPE: standalone
+---
+# Launch app (pre-seeded wallet will be auto-restored)
+- launchApp
+
+# === DASHBOARD READY CHECK ===
+# Wait for dashboard to load with wallet
+- extendedWaitUntil:
+    visible:
+      id: "account-card"
+    timeout: 30000
+
+# Wait for wallet to sync - balance appears when sync completes
+- extendedWaitUntil:
+    visible:
+      id: "account-card-balance"
+    timeout: 60000
+
+# Take screenshot of synced dashboard
+- takeScreenshot: screenshots/preseed-receive-dashboard
+
+# === TAP RECEIVE BUTTON ===
+# Tap the receive button on the dashboard
+- tapOn:
+    id: "receive-button"
+
+# Wait for animations to settle
+- waitForAnimationToEnd
+
+# === VERIFY RECEIVE SCREEN ===
+# Wait for receive screen to load - QR code should be visible
+- extendedWaitUntil:
+    visible:
+      id: "receive-qr-code"
+    timeout: 10000
+
+# Verify the wallet address is displayed
+- assertVisible:
+    id: "receive-address"
+
+# Verify copy button is available
+- assertVisible:
+    id: "copy-button"
+
+# Verify share button is available
+- assertVisible:
+    id: "share-button"
+
+# Take screenshot of receive screen
+- takeScreenshot: screenshots/preseed-receive-screen
+
+# === TEST COPY FUNCTIONALITY ===
+# Tap copy button to verify it works
+- tapOn:
+    id: "copy-button"
+
+# Wait a moment for the toast to appear
+- waitForAnimationToEnd
+
+# Take screenshot showing copied state
+- takeScreenshot: screenshots/preseed-receive-copied

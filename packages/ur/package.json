@@ -1,0 +1,13 @@
+{
+  "name": "@pnyx/ur",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@evolution-sdk/evolution": "*",
+    "@pnyx/crypto": "workspace:*"
+  }
+}

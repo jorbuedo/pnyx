@@ -1,0 +1,35 @@
+{
+  "name": "@pnyx/cardano-core",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "clean": "rm -rf dist node_modules/.tmp"
+  },
+  "dependencies": {
+    "@noble/hashes": "2.4.0",
+    "@scure/bip39": "2.0.0",
+    "effect": "3.21.4"
+  },
+  "peerDependencies": {
+    "@evolution-sdk/evolution": "*",
+    "@evolution-sdk/review": "*"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3",
+    "vitest": "4.1.10"
+  }
+}

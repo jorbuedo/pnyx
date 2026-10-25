@@ -1,0 +1,14 @@
+{
+  "app/src/config/env-manifest.ts": 1,
+  "packages/blockstore-native/src/index.ts": 1,
+  "packages/crypto/weak-nonce.ts": 1,
+  "packages/dapp-connector/manager.ts": 1,
+  "packages/links/authorities/browse.ts": 1,
+  "packages/links/authorities/claim.ts": 1,
+  "packages/links/authorities/pay.ts": 1,
+  "packages/links/brand-links.ts": 3,
+  "packages/links/parser.ts": 2,
+  "packages/model-native/src/index.ts": 1,
+  "packages/passkey-native/src/index.ts": 1,
+  "packages/tx-review/cardano.ts": 1
+}

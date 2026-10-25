@@ -1,0 +1,3752 @@
+{
+  "nested": {
+    "MessageType": {
+      "options": {
+        "(has_bitcoin_only_values)": true,
+        "(wire_enum)": true
+      },
+      "values": {
+        "Initialize": 0,
+        "Ping": 1,
+        "Success": 2,
+        "Failure": 3,
+        "Features": 17,
+        "PinMatrixRequest": 18,
+        "PinMatrixAck": 19,
+        "Cancel": 20,
+        "ButtonRequest": 26,
+        "ButtonAck": 27,
+        "PassphraseRequest": 41,
+        "PassphraseAck": 42,
+        "WordRequest": 46,
+        "WordAck": 47,
+        "GetFeatures": 55,
+        "Deprecated_PassphraseStateRequest": 77,
+        "Deprecated_PassphraseStateAck": 78,
+        "GetPublicKey": 11,
+        "PublicKey": 12,
+        "SignTx": 15,
+        "TxRequest": 21,
+        "TxAck": 22,
+        "GetAddress": 29,
+        "Address": 30,
+        "SignMessage": 38,
+        "VerifyMessage": 39,
+        "MessageSignature": 40,
+        "GetOwnershipId": 43,
+        "OwnershipId": 44,
+        "GetOwnershipProof": 49,
+        "OwnershipProof": 50,
+        "AuthorizeCoinJoin": 51,
+        "EthereumGetPublicKey": 450,
+        "EthereumPublicKey": 451,
+        "EthereumGetAddress": 56,
+        "EthereumAddress": 57,
+        "EthereumSignTx": 58,
+        "EthereumSignTxEIP1559": 452,
+        "EthereumTxRequest": 59,
+        "EthereumTxAck": 60,
+        "EthereumSignMessage": 64,
+        "EthereumVerifyMessage": 65,
+        "EthereumMessageSignature": 66,
+        "EthereumSignTypedData": 464,
+        "EthereumTypedDataStructRequest": 465,
+        "EthereumTypedDataStructAck": 466,
+        "EthereumTypedDataValueRequest": 467,
+        "EthereumTypedDataValueAck": 468,
+        "EthereumTypedDataSignature": 469,
+        "EthereumSignTypedHash": 470,
+        "CardanoGetPublicKey": 305,
+        "CardanoPublicKey": 306,
+        "CardanoGetAddress": 307,
+        "CardanoAddress": 308,
+        "CardanoTxItemAck": 313,
+        "CardanoTxAuxiliaryDataSupplement": 314,
+        "CardanoTxWitnessRequest": 315,
+        "CardanoTxWitnessResponse": 316,
+        "CardanoTxHostAck": 317,
+        "CardanoTxBodyHash": 318,
+        "CardanoSignTxFinished": 319,
+        "CardanoSignTxInit": 320,
+        "CardanoTxInput": 321,
+        "CardanoTxOutput": 322,
+        "CardanoAssetGroup": 323,
+        "CardanoToken": 324,
+        "CardanoTxCertificate": 325,
+        "CardanoTxWithdrawal": 326,
+        "CardanoTxAuxiliaryData": 327,
+        "CardanoPoolOwner": 328,
+        "CardanoPoolRelayParameters": 329,
+        "CardanoGetNativeScriptHash": 330,
+        "CardanoNativeScriptHash": 331,
+        "CardanoTxMint": 332,
+        "CardanoTxCollateralInput": 333,
+        "CardanoTxRequiredSigner": 334,
+        "CardanoTxInlineDatumChunk": 335,
+        "CardanoTxReferenceScriptChunk": 336,
+        "CardanoTxReferenceInput": 337,
+        "CardanoSignMessageInit": 338,
+        "CardanoMessageDataRequest": 339,
+        "CardanoMessageDataResponse": 340,
+        "CardanoMessageSignature": 341,
+        "SolanaGetPublicKey": 900,
+        "SolanaPublicKey": 901,
+        "SolanaGetAddress": 902,
+        "SolanaAddress": 903,
+        "SolanaSignTx": 904,
+        "SolanaTxSignature": 905
+      }
+    },
+    "Initialize": {
+      "fields": {
+        "session_id": {
+          "type": "bytes",
+          "id": 1
+        },
+        "_skip_passphrase": {
+          "type": "bool",
+          "id": 2
+        },
+        "derive_cardano": {
+          "type": "bool",
+          "id": 3
+        }
+      }
+    },
+    "Ping": {
+      "fields": {
+        "message": {
+          "type": "string",
+          "id": 1,
+          "options": {
+            "default": ""
+          }
+        },
+        "button_protection": {
+          "type": "bool",
+          "id": 2
+        }
+      }
+    },
+    "Success": {
+      "fields": {
+        "message": {
+          "type": "string",
+          "id": 1,
+          "options": {
+            "default": ""
+          }
+        }
+      }
+    },
+    "Failure": {
+      "fields": {
+        "code": {
+          "type": "FailureType",
+          "id": 1
+        },
+        "message": {
+          "type": "string",
+          "id": 2
+        }
+      },
+      "nested": {
+        "FailureType": {
+          "values": {
+            "Failure_UnexpectedMessage": 1,
+            "Failure_ButtonExpected": 2,
+            "Failure_DataError": 3,
+            "Failure_ActionCancelled": 4,
+            "Failure_PinExpected": 5,
+            "Failure_PinCancelled": 6,
+            "Failure_PinInvalid": 7,
+            "Failure_InvalidSignature": 8,
+            "Failure_ProcessError": 9,
+            "Failure_NotEnoughFunds": 10,
+            "Failure_NotInitialized": 11,
+            "Failure_PinMismatch": 12,
+            "Failure_WipeCodeMismatch": 13,
+            "Failure_InvalidSession": 14,
+            "Failure_Busy": 15,
+            "Failure_ThpUnallocatedSession": 16,
+            "Failure_InvalidProtocol": 17,
+            "Failure_BufferError": 18,
+            "Failure_FirmwareError": 99
+          }
+        }
+      }
+    },
+    "Features": {
+      "fields": {
+        "vendor": {
+          "type": "string",
+          "id": 1
+        },
+        "major_version": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 2
+        },
+        "minor_version": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 3
+        },
+        "patch_version": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 4
+        },
+        "build_version": {
+          "type": "uint32",
+          "id": 61
+        },
+        "bootloader_mode": {
+          "type": "bool",
+          "id": 5
+        },
+        "device_id": {
+          "type": "string",
+          "id": 6
+        },
+        "pin_protection": {
+          "type": "bool",
+          "id": 7
+        },
+        "passphrase_protection": {
+          "type": "bool",
+          "id": 8
+        },
+        "language": {
+          "type": "string",
+          "id": 9
+        },
+        "label": {
+          "type": "string",
+          "id": 10
+        },
+        "initialized": {
+          "type": "bool",
+          "id": 12
+        },
+        "revision": {
+          "type": "bytes",
+          "id": 13
+        },
+        "bootloader_hash": {
+          "type": "bytes",
+          "id": 14
+        },
+        "imported": {
+          "type": "bool",
+          "id": 15
+        },
+        "unlocked": {
+          "type": "bool",
+          "id": 16
+        },
+        "_passphrase_cached": {
+          "type": "bool",
+          "id": 17
+        },
+        "firmware_present": {
+          "type": "bool",
+          "id": 18
+        },
+        "backup_availability": {
+          "type": "BackupAvailability",
+          "id": 19
+        },
+        "flags": {
+          "type": "uint32",
+          "id": 20
+        },
+        "model": {
+          "type": "string",
+          "id": 21
+        },
+        "fw_major": {
+          "type": "uint32",
+          "id": 22
+        },
+        "fw_minor": {
+          "type": "uint32",
+          "id": 23
+        },
+        "fw_patch": {
+          "type": "uint32",
+          "id": 24
+        },
+        "fw_build": {
+          "type": "uint32",
+          "id": 62
+        },
+        "fw_vendor": {
+          "type": "string",
+          "id": 25
+        },
+        "unfinished_backup": {
+          "type": "bool",
+          "id": 27
+        },
+        "no_backup": {
+          "type": "bool",
+          "id": 28
+        },
+        "recovery_status": {
+          "type": "RecoveryStatus",
+          "id": 29
+        },
+        "capabilities": {
+          "rule": "repeated",
+          "type": "Capability",
+          "id": 30,
+          "options": {
+            "packed": false
+          }
+        },
+        "backup_type": {
+          "type": "BackupType",
+          "id": 31
+        },
+        "sd_card_present": {
+          "type": "bool",
+          "id": 32
+        },
+        "sd_protection": {
+          "type": "bool",
+          "id": 33
+        },
+        "wipe_code_protection": {
+          "type": "bool",
+          "id": 34
+        },
+        "session_id": {
+          "type": "bytes",
+          "id": 35
+        },
+        "passphrase_always_on_device": {
+          "type": "bool",
+          "id": 36
+        },
+        "safety_checks": {
+          "type": "SafetyCheckLevel",
+          "id": 37
+        },
+        "auto_lock_delay_ms": {
+          "type": "uint32",
+          "id": 38
+        },
+        "display_rotation": {
+          "type": "DisplayRotation",
+          "id": 39
+        },
+        "experimental_features": {
+          "type": "bool",
+          "id": 40
+        },
+        "busy": {
+          "type": "bool",
+          "id": 41
+        },
+        "homescreen_format": {
+          "type": "HomescreenFormat",
+          "id": 42
+        },
+        "hide_passphrase_from_host": {
+          "type": "bool",
+          "id": 43
+        },
+        "internal_model": {
+          "type": "string",
+          "id": 44
+        },
+        "unit_color": {
+          "type": "uint32",
+          "id": 45
+        },
+        "unit_btconly": {
+          "type": "bool",
+          "id": 46
+        },
+        "homescreen_width": {
+          "type": "uint32",
+          "id": 47
+        },
+        "homescreen_height": {
+          "type": "uint32",
+          "id": 48
+        },
+        "bootloader_locked": {
+          "type": "bool",
+          "id": 49
+        },
+        "language_version_matches": {
+          "type": "bool",
+          "id": 50,
+          "options": {
+            "default": true
+          }
+        },
+        "unit_packaging": {
+          "type": "uint32",
+          "id": 51
+        },
+        "haptic_feedback": {
+          "type": "bool",
+          "id": 52
+        },
+        "recovery_type": {
+          "type": "RecoveryType",
+          "id": 53
+        },
+        "optiga_sec": {
+          "type": "uint32",
+          "id": 54
+        },
+        "soc": {
+          "type": "uint32",
+          "id": 55
+        },
+        "firmware_corrupted": {
+          "type": "bool",
+          "id": 56
+        },
+        "auto_lock_delay_battery_ms": {
+          "type": "uint32",
+          "id": 57
+        },
+        "led": {
+          "type": "bool",
+          "id": 58
+        },
+        "usb_connected": {
+          "type": "bool",
+          "id": 59
+        },
+        "wireless_connected": {
+          "type": "bool",
+          "id": 60
+        }
+      },
+      "nested": {
+        "BackupAvailability": {
+          "values": {
+            "NotAvailable": 0,
+            "Required": 1,
+            "Available": 2
+          }
+        },
+        "RecoveryStatus": {
+          "values": {
+            "Nothing": 0,
+            "Recovery": 1,
+            "Backup": 2
+          }
+        },
+        "Capability": {
+          "values": {
+            "Capability_Bitcoin": 1,
+            "Capability_Bitcoin_like": 2,
+            "Capability_Binance": 3,
+            "Capability_Cardano": 4,
+            "Capability_Crypto": 5,
+            "Capability_EOS": 6,
+            "Capability_Ethereum": 7,
+            "Capability_Lisk": 8,
+            "Capability_Monero": 9,
+            "Capability_NEM": 10,
+            "Capability_Ripple": 11,
+            "Capability_Stellar": 12,
+            "Capability_Tezos": 13,
+            "Capability_U2F": 14,
+            "Capability_Shamir": 15,
+            "Capability_ShamirGroups": 16,
+            "Capability_PassphraseEntry": 17,
+            "Capability_Solana": 18,
+            "Capability_Translations": 19,
+            "Capability_Brightness": 20,
+            "Capability_Haptic": 21,
+            "Capability_BLE": 22,
+            "Capability_NFC": 23,
+            "Capability_Tron": 24
+          }
+        }
+      }
+    },
+    "PinMatrixRequest": {
+      "fields": {
+        "type": {
+          "type": "PinMatrixRequestType",
+          "id": 1
+        }
+      },
+      "nested": {
+        "PinMatrixRequestType": {
+          "values": {
+            "PinMatrixRequestType_Current": 1,
+            "PinMatrixRequestType_NewFirst": 2,
+            "PinMatrixRequestType_NewSecond": 3,
+            "PinMatrixRequestType_WipeCodeFirst": 4,
+            "PinMatrixRequestType_WipeCodeSecond": 5
+          }
+        }
+      }
+    },
+    "PinMatrixAck": {
+      "fields": {
+        "pin": {
+          "rule": "required",
+          "type": "string",
+          "id": 1
+        }
+      }
+    },
+    "Cancel": {
+      "fields": {}
+    },
+    "ButtonRequest": {
+      "fields": {
+        "code": {
+          "type": "ButtonRequestType",
+          "id": 1
+        },
+        "pages": {
+          "type": "uint32",
+          "id": 2
+        },
+        "name": {
+          "type": "string",
+          "id": 4
+        }
+      },
+      "nested": {
+        "ButtonRequestType": {
+          "values": {
+            "ButtonRequest_Other": 1,
+            "ButtonRequest_FeeOverThreshold": 2,
+            "ButtonRequest_ConfirmOutput": 3,
+            "ButtonRequest_ResetDevice": 4,
+            "ButtonRequest_ConfirmWord": 5,
+            "ButtonRequest_WipeDevice": 6,
+            "ButtonRequest_ProtectCall": 7,
+            "ButtonRequest_SignTx": 8,
+            "ButtonRequest_FirmwareCheck": 9,
+            "ButtonRequest_Address": 10,
+            "ButtonRequest_PublicKey": 11,
+            "ButtonRequest_MnemonicWordCount": 12,
+            "ButtonRequest_MnemonicInput": 13,
+            "_Deprecated_ButtonRequest_PassphraseType": 14,
+            "ButtonRequest_UnknownDerivationPath": 15,
+            "ButtonRequest_RecoveryHomepage": 16,
+            "ButtonRequest_Success": 17,
+            "ButtonRequest_Warning": 18,
+            "ButtonRequest_PassphraseEntry": 19,
+            "ButtonRequest_PinEntry": 20
+          }
+        }
+      }
+    },
+    "ButtonAck": {
+      "fields": {}
+    },
+    "PassphraseRequest": {
+      "fields": {
+        "_on_device": {
+          "type": "bool",
+          "id": 1
+        }
+      }
+    },
+    "PassphraseAck": {
+      "fields": {
+        "passphrase": {
+          "type": "string",
+          "id": 1
+        },
+        "_state": {
+          "type": "bytes",
+          "id": 2
+        },
+        "on_device": {
+          "type": "bool",
+          "id": 3
+        }
+      }
+    },
+    "WordRequest": {
+      "fields": {
+        "type": {
+          "rule": "required",
+          "type": "WordRequestType",
+          "id": 1
+        }
+      },
+      "nested": {
+        "WordRequestType": {
+          "values": {
+            "WordRequestType_Plain": 0,
+            "WordRequestType_Matrix9": 1,
+            "WordRequestType_Matrix6": 2
+          }
+        }
+      }
+    },
+    "WordAck": {
+      "fields": {
+        "word": {
+          "rule": "required",
+          "type": "string",
+          "id": 1
+        }
+      }
+    },
+    "GetFeatures": {
+      "fields": {}
+    },
+    "Deprecated_PassphraseStateRequest": {
+      "fields": {
+        "state": {
+          "type": "bytes",
+          "id": 1
+        }
+      }
+    },
+    "Deprecated_PassphraseStateAck": {
+      "fields": {}
+    },
+    "GetPublicKey": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "ecdsa_curve_name": {
+          "type": "string",
+          "id": 2
+        },
+        "show_display": {
+          "type": "bool",
+          "id": 3
+        },
+        "coin_name": {
+          "type": "string",
+          "id": 4,
+          "options": {
+            "default": "Bitcoin"
+          }
+        },
+        "script_type": {
+          "type": "InputScriptType",
+          "id": 5,
+          "options": {
+            "default": "SPENDADDRESS"
+          }
+        },
+        "ignore_xpub_magic": {
+          "type": "bool",
+          "id": 6
+        }
+      }
+    },
+    "PublicKey": {
+      "fields": {
+        "node": {
+          "rule": "required",
+          "type": "HDNodeType",
+          "id": 1
+        },
+        "xpub": {
+          "rule": "required",
+          "type": "string",
+          "id": 2
+        },
+        "root_fingerprint": {
+          "type": "uint32",
+          "id": 3
+        },
+        "descriptor": {
+          "type": "string",
+          "id": 4
+        }
+      }
+    },
+    "SignTx": {
+      "fields": {
+        "outputs_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 1
+        },
+        "inputs_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 2
+        },
+        "coin_name": {
+          "type": "string",
+          "id": 3,
+          "options": {
+            "default": "Bitcoin"
+          }
+        },
+        "version": {
+          "type": "uint32",
+          "id": 4,
+          "options": {
+            "default": 1
+          }
+        },
+        "lock_time": {
+          "type": "uint32",
+          "id": 5,
+          "options": {
+            "default": 0
+          }
+        },
+        "expiry": {
+          "type": "uint32",
+          "id": 6
+        },
+        "overwintered": {
+          "type": "bool",
+          "id": 7
+        },
+        "version_group_id": {
+          "type": "uint32",
+          "id": 8
+        },
+        "timestamp": {
+          "type": "uint32",
+          "id": 9
+        },
+        "branch_id": {
+          "type": "uint32",
+          "id": 10
+        },
+        "amount_unit": {
+          "type": "AmountUnit",
+          "id": 11,
+          "options": {
+            "default": "BITCOIN"
+          }
+        },
+        "decred_staking_ticket": {
+          "type": "bool",
+          "id": 12,
+          "options": {
+            "default": false
+          }
+        },
+        "serialize": {
+          "type": "bool",
+          "id": 13,
+          "options": {
+            "default": true
+          }
+        },
+        "coinjoin_request": {
+          "type": "CoinJoinRequest",
+          "id": 14
+        },
+        "chunkify": {
+          "type": "bool",
+          "id": 15
+        }
+      },
+      "nested": {
+        "CoinJoinRequest": {
+          "fields": {
+            "fee_rate": {
+              "rule": "required",
+              "type": "uint32",
+              "id": 1
+            },
+            "no_fee_threshold": {
+              "rule": "required",
+              "type": "uint64",
+              "id": 2
+            },
+            "min_registrable_amount": {
+              "rule": "required",
+              "type": "uint64",
+              "id": 3
+            },
+            "mask_public_key": {
+              "type": "bytes",
+              "id": 4
+            },
+            "signature": {
+              "type": "bytes",
+              "id": 5
+            }
+          }
+        }
+      }
+    },
+    "TxRequest": {
+      "fields": {
+        "request_type": {
+          "type": "RequestType",
+          "id": 1
+        },
+        "details": {
+          "type": "TxRequestDetailsType",
+          "id": 2
+        },
+        "serialized": {
+          "type": "TxRequestSerializedType",
+          "id": 3
+        }
+      },
+      "nested": {
+        "RequestType": {
+          "values": {
+            "TXINPUT": 0,
+            "TXOUTPUT": 1,
+            "TXMETA": 2,
+            "TXFINISHED": 3,
+            "TXEXTRADATA": 4,
+            "TXORIGINPUT": 5,
+            "TXORIGOUTPUT": 6,
+            "TXPAYMENTREQ": 7
+          }
+        },
+        "TxRequestDetailsType": {
+          "fields": {
+            "request_index": {
+              "type": "uint32",
+              "id": 1
+            },
+            "tx_hash": {
+              "type": "bytes",
+              "id": 2
+            },
+            "extra_data_len": {
+              "type": "uint32",
+              "id": 3
+            },
+            "extra_data_offset": {
+              "type": "uint32",
+              "id": 4
+            }
+          }
+        },
+        "TxRequestSerializedType": {
+          "fields": {
+            "signature_index": {
+              "type": "uint32",
+              "id": 1
+            },
+            "signature": {
+              "type": "bytes",
+              "id": 2
+            },
+            "serialized_tx": {
+              "type": "bytes",
+              "id": 3
+            }
+          }
+        }
+      }
+    },
+    "TxAck": {
+      "fields": {
+        "tx": {
+          "type": "TransactionType",
+          "id": 1
+        }
+      },
+      "nested": {
+        "TransactionType": {
+          "fields": {
+            "version": {
+              "type": "uint32",
+              "id": 1
+            },
+            "inputs": {
+              "rule": "repeated",
+              "type": "TxInputType",
+              "id": 2
+            },
+            "bin_outputs": {
+              "rule": "repeated",
+              "type": "TxOutputBinType",
+              "id": 3
+            },
+            "lock_time": {
+              "type": "uint32",
+              "id": 4
+            },
+            "outputs": {
+              "rule": "repeated",
+              "type": "TxOutputType",
+              "id": 5
+            },
+            "inputs_cnt": {
+              "type": "uint32",
+              "id": 6
+            },
+            "outputs_cnt": {
+              "type": "uint32",
+              "id": 7
+            },
+            "extra_data": {
+              "type": "bytes",
+              "id": 8
+            },
+            "extra_data_len": {
+              "type": "uint32",
+              "id": 9
+            },
+            "expiry": {
+              "type": "uint32",
+              "id": 10
+            },
+            "overwintered": {
+              "type": "bool",
+              "id": 11
+            },
+            "version_group_id": {
+              "type": "uint32",
+              "id": 12
+            },
+            "timestamp": {
+              "type": "uint32",
+              "id": 13
+            },
+            "branch_id": {
+              "type": "uint32",
+              "id": 14
+            }
+          },
+          "nested": {
+            "TxInputType": {
+              "fields": {
+                "address_n": {
+                  "rule": "repeated",
+                  "type": "uint32",
+                  "id": 1,
+                  "options": {
+                    "packed": false
+                  }
+                },
+                "prev_hash": {
+                  "rule": "required",
+                  "type": "bytes",
+                  "id": 2
+                },
+                "prev_index": {
+                  "rule": "required",
+                  "type": "uint32",
+                  "id": 3
+                },
+                "script_sig": {
+                  "type": "bytes",
+                  "id": 4
+                },
+                "sequence": {
+                  "type": "uint32",
+                  "id": 5,
+                  "options": {
+                    "default": 4294967295
+                  }
+                },
+                "script_type": {
+                  "type": "InputScriptType",
+                  "id": 6,
+                  "options": {
+                    "default": "SPENDADDRESS"
+                  }
+                },
+                "multisig": {
+                  "type": "MultisigRedeemScriptType",
+                  "id": 7
+                },
+                "amount": {
+                  "type": "uint64",
+                  "id": 8
+                },
+                "decred_tree": {
+                  "type": "uint32",
+                  "id": 9
+                },
+                "witness": {
+                  "type": "bytes",
+                  "id": 13
+                },
+                "ownership_proof": {
+                  "type": "bytes",
+                  "id": 14
+                },
+                "commitment_data": {
+                  "type": "bytes",
+                  "id": 15
+                },
+                "orig_hash": {
+                  "type": "bytes",
+                  "id": 16
+                },
+                "orig_index": {
+                  "type": "uint32",
+                  "id": 17
+                },
+                "decred_staking_spend": {
+                  "type": "DecredStakingSpendType",
+                  "id": 18
+                },
+                "script_pubkey": {
+                  "type": "bytes",
+                  "id": 19
+                },
+                "coinjoin_flags": {
+                  "type": "uint32",
+                  "id": 20,
+                  "options": {
+                    "default": 0
+                  }
+                }
+              }
+            },
+            "TxOutputBinType": {
+              "fields": {
+                "amount": {
+                  "rule": "required",
+                  "type": "uint64",
+                  "id": 1
+                },
+                "script_pubkey": {
+                  "rule": "required",
+                  "type": "bytes",
+                  "id": 2
+                },
+                "decred_script_version": {
+                  "type": "uint32",
+                  "id": 3
+                }
+              }
+            },
+            "TxOutputType": {
+              "fields": {
+                "address": {
+                  "type": "string",
+                  "id": 1
+                },
+                "address_n": {
+                  "rule": "repeated",
+                  "type": "uint32",
+                  "id": 2,
+                  "options": {
+                    "packed": false
+                  }
+                },
+                "amount": {
+                  "rule": "required",
+                  "type": "uint64",
+                  "id": 3
+                },
+                "script_type": {
+                  "type": "OutputScriptType",
+                  "id": 4,
+                  "options": {
+                    "default": "PAYTOADDRESS"
+                  }
+                },
+                "multisig": {
+                  "type": "MultisigRedeemScriptType",
+                  "id": 5
+                },
+                "op_return_data": {
+                  "type": "bytes",
+                  "id": 6
+                },
+                "orig_hash": {
+                  "type": "bytes",
+                  "id": 10
+                },
+                "orig_index": {
+                  "type": "uint32",
+                  "id": 11
+                },
+                "payment_req_index": {
+                  "type": "uint32",
+                  "id": 12
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "GetAddress": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "coin_name": {
+          "type": "string",
+          "id": 2,
+          "options": {
+            "default": "Bitcoin"
+          }
+        },
+        "show_display": {
+          "type": "bool",
+          "id": 3
+        },
+        "multisig": {
+          "type": "MultisigRedeemScriptType",
+          "id": 4
+        },
+        "script_type": {
+          "type": "InputScriptType",
+          "id": 5,
+          "options": {
+            "default": "SPENDADDRESS"
+          }
+        },
+        "ignore_xpub_magic": {
+          "type": "bool",
+          "id": 6
+        },
+        "chunkify": {
+          "type": "bool",
+          "id": 7
+        }
+      }
+    },
+    "Address": {
+      "fields": {
+        "address": {
+          "rule": "required",
+          "type": "string",
+          "id": 1
+        },
+        "mac": {
+          "type": "bytes",
+          "id": 2
+        }
+      }
+    },
+    "SignMessage": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "message": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        },
+        "coin_name": {
+          "type": "string",
+          "id": 3,
+          "options": {
+            "default": "Bitcoin"
+          }
+        },
+        "script_type": {
+          "type": "InputScriptType",
+          "id": 4,
+          "options": {
+            "default": "SPENDADDRESS"
+          }
+        },
+        "no_script_type": {
+          "type": "bool",
+          "id": 5
+        },
+        "chunkify": {
+          "type": "bool",
+          "id": 6
+        }
+      }
+    },
+    "VerifyMessage": {
+      "fields": {
+        "address": {
+          "rule": "required",
+          "type": "string",
+          "id": 1
+        },
+        "signature": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        },
+        "message": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 3
+        },
+        "coin_name": {
+          "type": "string",
+          "id": 4,
+          "options": {
+            "default": "Bitcoin"
+          }
+        },
+        "chunkify": {
+          "type": "bool",
+          "id": 5
+        }
+      }
+    },
+    "MessageSignature": {
+      "fields": {
+        "address": {
+          "rule": "required",
+          "type": "string",
+          "id": 1
+        },
+        "signature": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        }
+      }
+    },
+    "GetOwnershipId": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "coin_name": {
+          "type": "string",
+          "id": 2,
+          "options": {
+            "default": "Bitcoin"
+          }
+        },
+        "multisig": {
+          "type": "MultisigRedeemScriptType",
+          "id": 3
+        },
+        "script_type": {
+          "type": "InputScriptType",
+          "id": 4,
+          "options": {
+            "default": "SPENDADDRESS"
+          }
+        }
+      }
+    },
+    "OwnershipId": {
+      "fields": {
+        "ownership_id": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        }
+      }
+    },
+    "GetOwnershipProof": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "coin_name": {
+          "type": "string",
+          "id": 2,
+          "options": {
+            "default": "Bitcoin"
+          }
+        },
+        "script_type": {
+          "type": "InputScriptType",
+          "id": 3,
+          "options": {
+            "default": "SPENDWITNESS"
+          }
+        },
+        "multisig": {
+          "type": "MultisigRedeemScriptType",
+          "id": 4
+        },
+        "user_confirmation": {
+          "type": "bool",
+          "id": 5,
+          "options": {
+            "default": false
+          }
+        },
+        "ownership_ids": {
+          "rule": "repeated",
+          "type": "bytes",
+          "id": 6
+        },
+        "commitment_data": {
+          "type": "bytes",
+          "id": 7,
+          "options": {
+            "default": ""
+          }
+        }
+      }
+    },
+    "OwnershipProof": {
+      "fields": {
+        "ownership_proof": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        },
+        "signature": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        }
+      }
+    },
+    "AuthorizeCoinJoin": {
+      "fields": {
+        "coordinator": {
+          "rule": "required",
+          "type": "string",
+          "id": 1
+        },
+        "max_rounds": {
+          "rule": "required",
+          "type": "uint64",
+          "id": 2
+        },
+        "max_coordinator_fee_rate": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 3
+        },
+        "max_fee_per_kvbyte": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 4
+        },
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 5,
+          "options": {
+            "packed": false
+          }
+        },
+        "coin_name": {
+          "type": "string",
+          "id": 6,
+          "options": {
+            "default": "Bitcoin"
+          }
+        },
+        "script_type": {
+          "type": "InputScriptType",
+          "id": 7,
+          "options": {
+            "default": "SPENDADDRESS"
+          }
+        },
+        "amount_unit": {
+          "type": "AmountUnit",
+          "id": 8,
+          "options": {
+            "default": "BITCOIN"
+          }
+        }
+      }
+    },
+    "EthereumGetPublicKey": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "show_display": {
+          "type": "bool",
+          "id": 2
+        }
+      }
+    },
+    "EthereumPublicKey": {
+      "fields": {
+        "node": {
+          "rule": "required",
+          "type": "HDNodeType",
+          "id": 1
+        },
+        "xpub": {
+          "rule": "required",
+          "type": "string",
+          "id": 2
+        }
+      }
+    },
+    "EthereumGetAddress": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "show_display": {
+          "type": "bool",
+          "id": 2
+        },
+        "encoded_network": {
+          "type": "bytes",
+          "id": 3
+        },
+        "chunkify": {
+          "type": "bool",
+          "id": 4
+        }
+      }
+    },
+    "EthereumAddress": {
+      "fields": {
+        "_old_address": {
+          "type": "bytes",
+          "id": 1
+        },
+        "address": {
+          "type": "string",
+          "id": 2
+        },
+        "mac": {
+          "type": "bytes",
+          "id": 3
+        }
+      }
+    },
+    "EthereumSignTx": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "nonce": {
+          "type": "bytes",
+          "id": 2,
+          "options": {
+            "default": ""
+          }
+        },
+        "gas_price": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 3
+        },
+        "gas_limit": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 4
+        },
+        "to": {
+          "type": "string",
+          "id": 11,
+          "options": {
+            "default": ""
+          }
+        },
+        "value": {
+          "type": "bytes",
+          "id": 6,
+          "options": {
+            "default": ""
+          }
+        },
+        "data_initial_chunk": {
+          "type": "bytes",
+          "id": 7,
+          "options": {
+            "default": ""
+          }
+        },
+        "data_length": {
+          "type": "uint32",
+          "id": 8,
+          "options": {
+            "default": 0
+          }
+        },
+        "chain_id": {
+          "rule": "required",
+          "type": "uint64",
+          "id": 9
+        },
+        "tx_type": {
+          "type": "uint32",
+          "id": 10
+        },
+        "definitions": {
+          "type": "EthereumDefinitions",
+          "id": 12
+        },
+        "chunkify": {
+          "type": "bool",
+          "id": 13
+        },
+        "payment_req": {
+          "type": "PaymentRequest",
+          "id": 14
+        }
+      }
+    },
+    "EthereumSignTxEIP1559": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "nonce": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        },
+        "max_gas_fee": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 3
+        },
+        "max_priority_fee": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 4
+        },
+        "gas_limit": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 5
+        },
+        "to": {
+          "type": "string",
+          "id": 6,
+          "options": {
+            "default": ""
+          }
+        },
+        "value": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 7
+        },
+        "data_initial_chunk": {
+          "type": "bytes",
+          "id": 8,
+          "options": {
+            "default": ""
+          }
+        },
+        "data_length": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 9
+        },
+        "chain_id": {
+          "rule": "required",
+          "type": "uint64",
+          "id": 10
+        },
+        "access_list": {
+          "rule": "repeated",
+          "type": "EthereumAccessList",
+          "id": 11
+        },
+        "definitions": {
+          "type": "EthereumDefinitions",
+          "id": 12
+        },
+        "chunkify": {
+          "type": "bool",
+          "id": 13
+        },
+        "payment_req": {
+          "type": "PaymentRequest",
+          "id": 14
+        }
+      },
+      "nested": {
+        "EthereumAccessList": {
+          "fields": {
+            "address": {
+              "rule": "required",
+              "type": "string",
+              "id": 1
+            },
+            "storage_keys": {
+              "rule": "repeated",
+              "type": "bytes",
+              "id": 2
+            }
+          }
+        }
+      }
+    },
+    "EthereumTxRequest": {
+      "fields": {
+        "data_length": {
+          "type": "uint32",
+          "id": 1
+        },
+        "signature_v": {
+          "type": "uint32",
+          "id": 2
+        },
+        "signature_r": {
+          "type": "bytes",
+          "id": 3
+        },
+        "signature_s": {
+          "type": "bytes",
+          "id": 4
+        }
+      }
+    },
+    "EthereumTxAck": {
+      "fields": {
+        "data_chunk": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        }
+      }
+    },
+    "EthereumSignMessage": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "message": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        },
+        "encoded_network": {
+          "type": "bytes",
+          "id": 3
+        },
+        "chunkify": {
+          "type": "bool",
+          "id": 4
+        }
+      }
+    },
+    "EthereumVerifyMessage": {
+      "fields": {
+        "signature": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        },
+        "message": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 3
+        },
+        "address": {
+          "rule": "required",
+          "type": "string",
+          "id": 4
+        },
+        "chunkify": {
+          "type": "bool",
+          "id": 5
+        }
+      }
+    },
+    "EthereumMessageSignature": {
+      "fields": {
+        "signature": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        },
+        "address": {
+          "rule": "required",
+          "type": "string",
+          "id": 3
+        }
+      }
+    },
+    "EthereumSignTypedData": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "primary_type": {
+          "rule": "required",
+          "type": "string",
+          "id": 2
+        },
+        "metamask_v4_compat": {
+          "type": "bool",
+          "id": 3,
+          "options": {
+            "default": true
+          }
+        },
+        "definitions": {
+          "type": "EthereumDefinitions",
+          "id": 4
+        },
+        "show_message_hash": {
+          "type": "bytes",
+          "id": 5
+        }
+      }
+    },
+    "EthereumTypedDataStructRequest": {
+      "fields": {
+        "name": {
+          "rule": "required",
+          "type": "string",
+          "id": 1
+        }
+      }
+    },
+    "EthereumTypedDataStructAck": {
+      "fields": {
+        "members": {
+          "rule": "repeated",
+          "type": "EthereumStructMember",
+          "id": 1
+        }
+      },
+      "nested": {
+        "EthereumStructMember": {
+          "fields": {
+            "type": {
+              "rule": "required",
+              "type": "EthereumFieldType",
+              "id": 1
+            },
+            "name": {
+              "rule": "required",
+              "type": "string",
+              "id": 2
+            }
+          }
+        },
+        "EthereumFieldType": {
+          "fields": {
+            "data_type": {
+              "rule": "required",
+              "type": "EthereumDataType",
+              "id": 1
+            },
+            "size": {
+              "type": "uint32",
+              "id": 2
+            },
+            "entry_type": {
+              "type": "EthereumFieldType",
+              "id": 3
+            },
+            "struct_name": {
+              "type": "string",
+              "id": 4
+            }
+          }
+        },
+        "EthereumDataType": {
+          "values": {
+            "UINT": 1,
+            "INT": 2,
+            "BYTES": 3,
+            "STRING": 4,
+            "BOOL": 5,
+            "ADDRESS": 6,
+            "ARRAY": 7,
+            "STRUCT": 8
+          }
+        }
+      }
+    },
+    "EthereumTypedDataValueRequest": {
+      "fields": {
+        "member_path": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        }
+      }
+    },
+    "EthereumTypedDataValueAck": {
+      "fields": {
+        "value": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        }
+      }
+    },
+    "EthereumTypedDataSignature": {
+      "fields": {
+        "signature": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        },
+        "address": {
+          "rule": "required",
+          "type": "string",
+          "id": 2
+        }
+      }
+    },
+    "EthereumSignTypedHash": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "domain_separator_hash": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        },
+        "message_hash": {
+          "type": "bytes",
+          "id": 3
+        },
+        "encoded_network": {
+          "type": "bytes",
+          "id": 4
+        }
+      }
+    },
+    "CardanoGetPublicKey": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "show_display": {
+          "type": "bool",
+          "id": 2
+        },
+        "derivation_type": {
+          "rule": "required",
+          "type": "CardanoDerivationType",
+          "id": 3
+        }
+      }
+    },
+    "CardanoPublicKey": {
+      "fields": {
+        "xpub": {
+          "rule": "required",
+          "type": "string",
+          "id": 1
+        },
+        "node": {
+          "rule": "required",
+          "type": "HDNodeType",
+          "id": 2
+        }
+      }
+    },
+    "CardanoGetAddress": {
+      "fields": {
+        "show_display": {
+          "type": "bool",
+          "id": 2,
+          "options": {
+            "default": false
+          }
+        },
+        "protocol_magic": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 3
+        },
+        "network_id": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 4
+        },
+        "address_parameters": {
+          "rule": "required",
+          "type": "CardanoAddressParametersType",
+          "id": 5
+        },
+        "derivation_type": {
+          "rule": "required",
+          "type": "CardanoDerivationType",
+          "id": 6
+        },
+        "chunkify": {
+          "type": "bool",
+          "id": 7
+        }
+      }
+    },
+    "CardanoAddress": {
+      "fields": {
+        "address": {
+          "rule": "required",
+          "type": "string",
+          "id": 1
+        },
+        "mac": {
+          "type": "bytes",
+          "id": 2
+        }
+      }
+    },
+    "CardanoTxItemAck": {
+      "fields": {}
+    },
+    "CardanoTxAuxiliaryDataSupplement": {
+      "fields": {
+        "type": {
+          "rule": "required",
+          "type": "CardanoTxAuxiliaryDataSupplementType",
+          "id": 1
+        },
+        "auxiliary_data_hash": {
+          "type": "bytes",
+          "id": 2
+        },
+        "cvote_registration_signature": {
+          "type": "bytes",
+          "id": 3
+        }
+      }
+    },
+    "CardanoTxWitnessRequest": {
+      "fields": {
+        "path": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        }
+      }
+    },
+    "CardanoTxWitnessResponse": {
+      "fields": {
+        "type": {
+          "rule": "required",
+          "type": "CardanoTxWitnessType",
+          "id": 1
+        },
+        "pub_key": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        },
+        "signature": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 3
+        },
+        "chain_code": {
+          "type": "bytes",
+          "id": 4
+        }
+      }
+    },
+    "CardanoTxHostAck": {
+      "fields": {}
+    },
+    "CardanoTxBodyHash": {
+      "fields": {
+        "tx_hash": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        }
+      }
+    },
+    "CardanoSignTxFinished": {
+      "fields": {}
+    },
+    "CardanoSignTxInit": {
+      "fields": {
+        "signing_mode": {
+          "rule": "required",
+          "type": "CardanoTxSigningMode",
+          "id": 1
+        },
+        "protocol_magic": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 2
+        },
+        "network_id": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 3
+        },
+        "inputs_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 4
+        },
+        "outputs_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 5
+        },
+        "fee": {
+          "rule": "required",
+          "type": "uint64",
+          "id": 6
+        },
+        "ttl": {
+          "type": "uint64",
+          "id": 7
+        },
+        "certificates_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 8
+        },
+        "withdrawals_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 9
+        },
+        "has_auxiliary_data": {
+          "rule": "required",
+          "type": "bool",
+          "id": 10
+        },
+        "validity_interval_start": {
+          "type": "uint64",
+          "id": 11
+        },
+        "witness_requests_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 12
+        },
+        "minting_asset_groups_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 13
+        },
+        "derivation_type": {
+          "rule": "required",
+          "type": "CardanoDerivationType",
+          "id": 14
+        },
+        "include_network_id": {
+          "type": "bool",
+          "id": 15,
+          "options": {
+            "default": false
+          }
+        },
+        "script_data_hash": {
+          "type": "bytes",
+          "id": 16
+        },
+        "collateral_inputs_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 17
+        },
+        "required_signers_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 18
+        },
+        "has_collateral_return": {
+          "type": "bool",
+          "id": 19,
+          "options": {
+            "default": false
+          }
+        },
+        "total_collateral": {
+          "type": "uint64",
+          "id": 20
+        },
+        "reference_inputs_count": {
+          "type": "uint32",
+          "id": 21,
+          "options": {
+            "default": 0
+          }
+        },
+        "chunkify": {
+          "type": "bool",
+          "id": 22
+        },
+        "tag_cbor_sets": {
+          "type": "bool",
+          "id": 23,
+          "options": {
+            "default": false
+          }
+        },
+        "payment_req": {
+          "type": "PaymentRequest",
+          "id": 24
+        }
+      }
+    },
+    "CardanoTxInput": {
+      "fields": {
+        "prev_hash": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        },
+        "prev_index": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 2
+        }
+      }
+    },
+    "CardanoTxOutput": {
+      "fields": {
+        "address": {
+          "type": "string",
+          "id": 1
+        },
+        "address_parameters": {
+          "type": "CardanoAddressParametersType",
+          "id": 2
+        },
+        "amount": {
+          "rule": "required",
+          "type": "uint64",
+          "id": 3
+        },
+        "asset_groups_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 4
+        },
+        "datum_hash": {
+          "type": "bytes",
+          "id": 5
+        },
+        "format": {
+          "type": "CardanoTxOutputSerializationFormat",
+          "id": 6,
+          "options": {
+            "default": "ARRAY_LEGACY"
+          }
+        },
+        "inline_datum_size": {
+          "type": "uint32",
+          "id": 7,
+          "options": {
+            "default": 0
+          }
+        },
+        "reference_script_size": {
+          "type": "uint32",
+          "id": 8,
+          "options": {
+            "default": 0
+          }
+        }
+      }
+    },
+    "CardanoAssetGroup": {
+      "fields": {
+        "policy_id": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        },
+        "tokens_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 2
+        }
+      }
+    },
+    "CardanoToken": {
+      "fields": {
+        "asset_name_bytes": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        },
+        "amount": {
+          "type": "uint64",
+          "id": 2
+        },
+        "mint_amount": {
+          "type": "sint64",
+          "id": 3
+        }
+      }
+    },
+    "CardanoTxCertificate": {
+      "fields": {
+        "type": {
+          "rule": "required",
+          "type": "CardanoCertificateType",
+          "id": 1
+        },
+        "path": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 2,
+          "options": {
+            "packed": false
+          }
+        },
+        "pool": {
+          "type": "bytes",
+          "id": 3
+        },
+        "pool_parameters": {
+          "type": "CardanoPoolParametersType",
+          "id": 4
+        },
+        "script_hash": {
+          "type": "bytes",
+          "id": 5
+        },
+        "key_hash": {
+          "type": "bytes",
+          "id": 6
+        },
+        "deposit": {
+          "type": "uint64",
+          "id": 7
+        },
+        "drep": {
+          "type": "CardanoDRep",
+          "id": 8
+        }
+      }
+    },
+    "CardanoTxWithdrawal": {
+      "fields": {
+        "path": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "amount": {
+          "rule": "required",
+          "type": "uint64",
+          "id": 2
+        },
+        "script_hash": {
+          "type": "bytes",
+          "id": 3
+        },
+        "key_hash": {
+          "type": "bytes",
+          "id": 4
+        }
+      }
+    },
+    "CardanoTxAuxiliaryData": {
+      "fields": {
+        "cvote_registration_parameters": {
+          "type": "CardanoCVoteRegistrationParametersType",
+          "id": 1
+        },
+        "hash": {
+          "type": "bytes",
+          "id": 2
+        }
+      }
+    },
+    "CardanoPoolOwner": {
+      "fields": {
+        "staking_key_path": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "staking_key_hash": {
+          "type": "bytes",
+          "id": 2
+        }
+      }
+    },
+    "CardanoPoolRelayParameters": {
+      "fields": {
+        "type": {
+          "rule": "required",
+          "type": "CardanoPoolRelayType",
+          "id": 1
+        },
+        "ipv4_address": {
+          "type": "bytes",
+          "id": 2
+        },
+        "ipv6_address": {
+          "type": "bytes",
+          "id": 3
+        },
+        "host_name": {
+          "type": "string",
+          "id": 4
+        },
+        "port": {
+          "type": "uint32",
+          "id": 5
+        }
+      }
+    },
+    "CardanoGetNativeScriptHash": {
+      "fields": {
+        "script": {
+          "rule": "required",
+          "type": "CardanoNativeScript",
+          "id": 1
+        },
+        "display_format": {
+          "rule": "required",
+          "type": "CardanoNativeScriptHashDisplayFormat",
+          "id": 2
+        },
+        "derivation_type": {
+          "rule": "required",
+          "type": "CardanoDerivationType",
+          "id": 3
+        }
+      }
+    },
+    "CardanoNativeScriptHash": {
+      "fields": {
+        "script_hash": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        }
+      }
+    },
+    "CardanoTxMint": {
+      "fields": {
+        "asset_groups_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 1
+        }
+      }
+    },
+    "CardanoTxCollateralInput": {
+      "fields": {
+        "prev_hash": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        },
+        "prev_index": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 2
+        }
+      }
+    },
+    "CardanoTxRequiredSigner": {
+      "fields": {
+        "key_hash": {
+          "type": "bytes",
+          "id": 1
+        },
+        "key_path": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 2,
+          "options": {
+            "packed": false
+          }
+        }
+      }
+    },
+    "CardanoTxInlineDatumChunk": {
+      "fields": {
+        "data": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        }
+      }
+    },
+    "CardanoTxReferenceScriptChunk": {
+      "fields": {
+        "data": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        }
+      }
+    },
+    "CardanoTxReferenceInput": {
+      "fields": {
+        "prev_hash": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        },
+        "prev_index": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 2
+        }
+      }
+    },
+    "CardanoSignMessageInit": {
+      "fields": {
+        "protocol_magic": {
+          "type": "uint32",
+          "id": 1
+        },
+        "network_id": {
+          "type": "uint32",
+          "id": 2
+        },
+        "signing_path": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 3,
+          "options": {
+            "packed": false
+          }
+        },
+        "payload_size": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 4
+        },
+        "prefer_hex_display": {
+          "rule": "required",
+          "type": "bool",
+          "id": 5
+        },
+        "address_parameters": {
+          "type": "CardanoAddressParametersType",
+          "id": 6
+        },
+        "derivation_type": {
+          "rule": "required",
+          "type": "CardanoDerivationType",
+          "id": 7
+        }
+      }
+    },
+    "CardanoMessageDataRequest": {
+      "fields": {
+        "length": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 1
+        },
+        "offset": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 2
+        }
+      }
+    },
+    "CardanoMessageDataResponse": {
+      "fields": {
+        "data": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        }
+      }
+    },
+    "CardanoMessageSignature": {
+      "fields": {
+        "signature": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        },
+        "address": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        },
+        "pub_key": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 3
+        }
+      }
+    },
+    "SolanaGetPublicKey": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "show_display": {
+          "type": "bool",
+          "id": 2
+        }
+      }
+    },
+    "SolanaPublicKey": {
+      "fields": {
+        "public_key": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        }
+      }
+    },
+    "SolanaGetAddress": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "show_display": {
+          "type": "bool",
+          "id": 2
+        },
+        "chunkify": {
+          "type": "bool",
+          "id": 3
+        }
+      }
+    },
+    "SolanaAddress": {
+      "fields": {
+        "address": {
+          "rule": "required",
+          "type": "string",
+          "id": 1
+        },
+        "mac": {
+          "type": "bytes",
+          "id": 2
+        }
+      }
+    },
+    "SolanaSignTx": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "serialized_tx": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        },
+        "additional_info": {
+          "type": "SolanaTxAdditionalInfo",
+          "id": 3
+        },
+        "payment_req": {
+          "type": "PaymentRequest",
+          "id": 4
+        }
+      }
+    },
+    "SolanaTxSignature": {
+      "fields": {
+        "signature": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        }
+      }
+    },
+    "CardanoDerivationType": {
+      "values": {
+        "LEDGER": 0,
+        "ICARUS": 1,
+        "ICARUS_TREZOR": 2
+      }
+    },
+    "CardanoAddressType": {
+      "values": {
+        "BASE": 0,
+        "BASE_SCRIPT_KEY": 1,
+        "BASE_KEY_SCRIPT": 2,
+        "BASE_SCRIPT_SCRIPT": 3,
+        "POINTER": 4,
+        "POINTER_SCRIPT": 5,
+        "ENTERPRISE": 6,
+        "ENTERPRISE_SCRIPT": 7,
+        "BYRON": 8,
+        "REWARD": 14,
+        "REWARD_SCRIPT": 15
+      }
+    },
+    "CardanoNativeScriptType": {
+      "values": {
+        "PUB_KEY": 0,
+        "ALL": 1,
+        "ANY": 2,
+        "N_OF_K": 3,
+        "INVALID_BEFORE": 4,
+        "INVALID_HEREAFTER": 5
+      }
+    },
+    "CardanoNativeScriptHashDisplayFormat": {
+      "values": {
+        "HIDE": 0,
+        "BECH32": 1,
+        "POLICY_ID": 2
+      }
+    },
+    "CardanoTxOutputSerializationFormat": {
+      "values": {
+        "ARRAY_LEGACY": 0,
+        "MAP_BABBAGE": 1
+      }
+    },
+    "CardanoCertificateType": {
+      "values": {
+        "STAKE_REGISTRATION": 0,
+        "STAKE_DEREGISTRATION": 1,
+        "STAKE_DELEGATION": 2,
+        "STAKE_POOL_REGISTRATION": 3,
+        "STAKE_REGISTRATION_CONWAY": 7,
+        "STAKE_DEREGISTRATION_CONWAY": 8,
+        "VOTE_DELEGATION": 9
+      }
+    },
+    "CardanoDRepType": {
+      "values": {
+        "KEY_HASH": 0,
+        "SCRIPT_HASH": 1,
+        "ABSTAIN": 2,
+        "NO_CONFIDENCE": 3
+      }
+    },
+    "CardanoPoolRelayType": {
+      "values": {
+        "SINGLE_HOST_IP": 0,
+        "SINGLE_HOST_NAME": 1,
+        "MULTIPLE_HOST_NAME": 2
+      }
+    },
+    "CardanoTxAuxiliaryDataSupplementType": {
+      "values": {
+        "NONE": 0,
+        "CVOTE_REGISTRATION_SIGNATURE": 1
+      }
+    },
+    "CardanoCVoteRegistrationFormat": {
+      "values": {
+        "CIP15": 0,
+        "CIP36": 1
+      }
+    },
+    "CardanoTxSigningMode": {
+      "values": {
+        "ORDINARY_TRANSACTION": 0,
+        "POOL_REGISTRATION_AS_OWNER": 1,
+        "MULTISIG_TRANSACTION": 2,
+        "PLUTUS_TRANSACTION": 3
+      }
+    },
+    "CardanoTxWitnessType": {
+      "values": {
+        "BYRON_WITNESS": 0,
+        "SHELLEY_WITNESS": 1
+      }
+    },
+    "CardanoBlockchainPointerType": {
+      "fields": {
+        "block_index": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 1
+        },
+        "tx_index": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 2
+        },
+        "certificate_index": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 3
+        }
+      }
+    },
+    "CardanoNativeScript": {
+      "fields": {
+        "type": {
+          "rule": "required",
+          "type": "CardanoNativeScriptType",
+          "id": 1
+        },
+        "scripts": {
+          "rule": "repeated",
+          "type": "CardanoNativeScript",
+          "id": 2
+        },
+        "key_hash": {
+          "type": "bytes",
+          "id": 3
+        },
+        "key_path": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 4,
+          "options": {
+            "packed": false
+          }
+        },
+        "required_signatures_count": {
+          "type": "uint32",
+          "id": 5
+        },
+        "invalid_before": {
+          "type": "uint64",
+          "id": 6
+        },
+        "invalid_hereafter": {
+          "type": "uint64",
+          "id": 7
+        }
+      }
+    },
+    "CardanoAddressParametersType": {
+      "fields": {
+        "address_type": {
+          "rule": "required",
+          "type": "CardanoAddressType",
+          "id": 1
+        },
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 2,
+          "options": {
+            "packed": false
+          }
+        },
+        "address_n_staking": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 3,
+          "options": {
+            "packed": false
+          }
+        },
+        "staking_key_hash": {
+          "type": "bytes",
+          "id": 4
+        },
+        "certificate_pointer": {
+          "type": "CardanoBlockchainPointerType",
+          "id": 5
+        },
+        "script_payment_hash": {
+          "type": "bytes",
+          "id": 6
+        },
+        "script_staking_hash": {
+          "type": "bytes",
+          "id": 7
+        }
+      }
+    },
+    "CardanoPoolParametersType": {
+      "fields": {
+        "pool_id": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        },
+        "vrf_key_hash": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        },
+        "pledge": {
+          "rule": "required",
+          "type": "uint64",
+          "id": 3
+        },
+        "cost": {
+          "rule": "required",
+          "type": "uint64",
+          "id": 4
+        },
+        "margin_numerator": {
+          "rule": "required",
+          "type": "uint64",
+          "id": 5
+        },
+        "margin_denominator": {
+          "rule": "required",
+          "type": "uint64",
+          "id": 6
+        },
+        "reward_account": {
+          "rule": "required",
+          "type": "string",
+          "id": 7
+        },
+        "metadata": {
+          "type": "CardanoPoolMetadataType",
+          "id": 10
+        },
+        "owners_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 11
+        },
+        "relays_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 12
+        }
+      }
+    },
+    "CardanoPoolMetadataType": {
+      "fields": {
+        "url": {
+          "rule": "required",
+          "type": "string",
+          "id": 1
+        },
+        "hash": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        }
+      }
+    },
+    "CardanoDRep": {
+      "fields": {
+        "type": {
+          "rule": "required",
+          "type": "CardanoDRepType",
+          "id": 1
+        },
+        "key_hash": {
+          "type": "bytes",
+          "id": 2
+        },
+        "script_hash": {
+          "type": "bytes",
+          "id": 3
+        }
+      }
+    },
+    "CardanoCVoteRegistrationDelegation": {
+      "fields": {
+        "vote_public_key": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        },
+        "weight": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 2
+        }
+      }
+    },
+    "CardanoCVoteRegistrationParametersType": {
+      "fields": {
+        "vote_public_key": {
+          "type": "bytes",
+          "id": 1
+        },
+        "staking_path": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 2,
+          "options": {
+            "packed": false
+          }
+        },
+        "payment_address_parameters": {
+          "type": "CardanoAddressParametersType",
+          "id": 3
+        },
+        "nonce": {
+          "rule": "required",
+          "type": "uint64",
+          "id": 4
+        },
+        "format": {
+          "type": "CardanoCVoteRegistrationFormat",
+          "id": 5,
+          "options": {
+            "default": "CIP15"
+          }
+        },
+        "delegations": {
+          "rule": "repeated",
+          "type": "CardanoCVoteRegistrationDelegation",
+          "id": 6
+        },
+        "voting_purpose": {
+          "type": "uint64",
+          "id": 7
+        },
+        "payment_address": {
+          "type": "string",
+          "id": 8
+        }
+      }
+    },
+    "InputScriptType": {
+      "values": {
+        "SPENDADDRESS": 0,
+        "SPENDMULTISIG": 1,
+        "EXTERNAL": 2,
+        "SPENDWITNESS": 3,
+        "SPENDP2SHWITNESS": 4,
+        "SPENDTAPROOT": 5
+      }
+    },
+    "OutputScriptType": {
+      "values": {
+        "PAYTOADDRESS": 0,
+        "PAYTOSCRIPTHASH": 1,
+        "PAYTOMULTISIG": 2,
+        "PAYTOOPRETURN": 3,
+        "PAYTOWITNESS": 4,
+        "PAYTOP2SHWITNESS": 5,
+        "PAYTOTAPROOT": 6
+      }
+    },
+    "DecredStakingSpendType": {
+      "values": {
+        "SSGen": 0,
+        "SSRTX": 1
+      }
+    },
+    "AmountUnit": {
+      "values": {
+        "BITCOIN": 0,
+        "MILLIBITCOIN": 1,
+        "MICROBITCOIN": 2,
+        "SATOSHI": 3
+      }
+    },
+    "MultisigPubkeysOrder": {
+      "values": {
+        "PRESERVED": 0,
+        "LEXICOGRAPHIC": 1
+      }
+    },
+    "MultisigRedeemScriptType": {
+      "fields": {
+        "pubkeys": {
+          "rule": "repeated",
+          "type": "HDNodePathType",
+          "id": 1
+        },
+        "signatures": {
+          "rule": "repeated",
+          "type": "bytes",
+          "id": 2
+        },
+        "m": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 3
+        },
+        "nodes": {
+          "rule": "repeated",
+          "type": "HDNodeType",
+          "id": 4
+        },
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 5,
+          "options": {
+            "packed": false
+          }
+        },
+        "pubkeys_order": {
+          "type": "MultisigPubkeysOrder",
+          "id": 6,
+          "options": {
+            "default": "PRESERVED"
+          }
+        }
+      },
+      "nested": {
+        "HDNodePathType": {
+          "fields": {
+            "node": {
+              "rule": "required",
+              "type": "HDNodeType",
+              "id": 1
+            },
+            "address_n": {
+              "rule": "repeated",
+              "type": "uint32",
+              "id": 2,
+              "options": {
+                "packed": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "TxInput": {
+      "fields": {
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 1,
+          "options": {
+            "packed": false
+          }
+        },
+        "prev_hash": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        },
+        "prev_index": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 3
+        },
+        "script_sig": {
+          "type": "bytes",
+          "id": 4
+        },
+        "sequence": {
+          "type": "uint32",
+          "id": 5,
+          "options": {
+            "default": 4294967295
+          }
+        },
+        "script_type": {
+          "type": "InputScriptType",
+          "id": 6,
+          "options": {
+            "default": "SPENDADDRESS"
+          }
+        },
+        "multisig": {
+          "type": "MultisigRedeemScriptType",
+          "id": 7
+        },
+        "amount": {
+          "rule": "required",
+          "type": "uint64",
+          "id": 8
+        },
+        "decred_tree": {
+          "type": "uint32",
+          "id": 9
+        },
+        "witness": {
+          "type": "bytes",
+          "id": 13
+        },
+        "ownership_proof": {
+          "type": "bytes",
+          "id": 14
+        },
+        "commitment_data": {
+          "type": "bytes",
+          "id": 15
+        },
+        "orig_hash": {
+          "type": "bytes",
+          "id": 16
+        },
+        "orig_index": {
+          "type": "uint32",
+          "id": 17
+        },
+        "decred_staking_spend": {
+          "type": "DecredStakingSpendType",
+          "id": 18
+        },
+        "script_pubkey": {
+          "type": "bytes",
+          "id": 19
+        },
+        "coinjoin_flags": {
+          "type": "uint32",
+          "id": 20,
+          "options": {
+            "default": 0
+          }
+        }
+      }
+    },
+    "TxOutput": {
+      "fields": {
+        "address": {
+          "type": "string",
+          "id": 1
+        },
+        "address_n": {
+          "rule": "repeated",
+          "type": "uint32",
+          "id": 2,
+          "options": {
+            "packed": false
+          }
+        },
+        "amount": {
+          "rule": "required",
+          "type": "uint64",
+          "id": 3
+        },
+        "script_type": {
+          "type": "OutputScriptType",
+          "id": 4,
+          "options": {
+            "default": "PAYTOADDRESS"
+          }
+        },
+        "multisig": {
+          "type": "MultisigRedeemScriptType",
+          "id": 5
+        },
+        "op_return_data": {
+          "type": "bytes",
+          "id": 6
+        },
+        "orig_hash": {
+          "type": "bytes",
+          "id": 10
+        },
+        "orig_index": {
+          "type": "uint32",
+          "id": 11
+        },
+        "payment_req_index": {
+          "type": "uint32",
+          "id": 12
+        }
+      }
+    },
+    "PrevTx": {
+      "fields": {
+        "version": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 1
+        },
+        "lock_time": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 4
+        },
+        "inputs_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 6
+        },
+        "outputs_count": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 7
+        },
+        "extra_data_len": {
+          "type": "uint32",
+          "id": 9,
+          "options": {
+            "default": 0
+          }
+        },
+        "expiry": {
+          "type": "uint32",
+          "id": 10
+        },
+        "version_group_id": {
+          "type": "uint32",
+          "id": 12
+        },
+        "timestamp": {
+          "type": "uint32",
+          "id": 13
+        },
+        "branch_id": {
+          "type": "uint32",
+          "id": 14
+        }
+      }
+    },
+    "PrevInput": {
+      "fields": {
+        "prev_hash": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        },
+        "prev_index": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 3
+        },
+        "script_sig": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 4
+        },
+        "sequence": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 5
+        },
+        "decred_tree": {
+          "type": "uint32",
+          "id": 9
+        }
+      }
+    },
+    "PrevOutput": {
+      "fields": {
+        "amount": {
+          "rule": "required",
+          "type": "uint64",
+          "id": 1
+        },
+        "script_pubkey": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 2
+        },
+        "decred_script_version": {
+          "type": "uint32",
+          "id": 3
+        }
+      }
+    },
+    "TxAckInput": {
+      "options": {
+        "(wire_type)": 22
+      },
+      "fields": {
+        "tx": {
+          "rule": "required",
+          "type": "TxAckInputWrapper",
+          "id": 1
+        }
+      },
+      "nested": {
+        "TxAckInputWrapper": {
+          "fields": {
+            "input": {
+              "rule": "required",
+              "type": "TxInput",
+              "id": 2
+            }
+          }
+        }
+      }
+    },
+    "TxAckOutput": {
+      "options": {
+        "(wire_type)": 22
+      },
+      "fields": {
+        "tx": {
+          "rule": "required",
+          "type": "TxAckOutputWrapper",
+          "id": 1
+        }
+      },
+      "nested": {
+        "TxAckOutputWrapper": {
+          "fields": {
+            "output": {
+              "rule": "required",
+              "type": "TxOutput",
+              "id": 5
+            }
+          }
+        }
+      }
+    },
+    "TxAckPrevMeta": {
+      "options": {
+        "(wire_type)": 22
+      },
+      "fields": {
+        "tx": {
+          "rule": "required",
+          "type": "PrevTx",
+          "id": 1
+        }
+      }
+    },
+    "TxAckPrevInput": {
+      "options": {
+        "(wire_type)": 22
+      },
+      "fields": {
+        "tx": {
+          "rule": "required",
+          "type": "TxAckPrevInputWrapper",
+          "id": 1
+        }
+      },
+      "nested": {
+        "TxAckPrevInputWrapper": {
+          "fields": {
+            "input": {
+              "rule": "required",
+              "type": "PrevInput",
+              "id": 2
+            }
+          }
+        }
+      }
+    },
+    "TxAckPrevOutput": {
+      "options": {
+        "(wire_type)": 22
+      },
+      "fields": {
+        "tx": {
+          "rule": "required",
+          "type": "TxAckPrevOutputWrapper",
+          "id": 1
+        }
+      },
+      "nested": {
+        "TxAckPrevOutputWrapper": {
+          "fields": {
+            "output": {
+              "rule": "required",
+              "type": "PrevOutput",
+              "id": 3
+            }
+          }
+        }
+      }
+    },
+    "TxAckPrevExtraData": {
+      "options": {
+        "(wire_type)": 22
+      },
+      "fields": {
+        "tx": {
+          "rule": "required",
+          "type": "TxAckPrevExtraDataWrapper",
+          "id": 1
+        }
+      },
+      "nested": {
+        "TxAckPrevExtraDataWrapper": {
+          "fields": {
+            "extra_data_chunk": {
+              "rule": "required",
+              "type": "bytes",
+              "id": 8
+            }
+          }
+        }
+      }
+    },
+    "EthereumDefinitions": {
+      "fields": {
+        "encoded_network": {
+          "type": "bytes",
+          "id": 1
+        },
+        "encoded_token": {
+          "type": "bytes",
+          "id": 2
+        }
+      }
+    },
+    "EthereumNetworkInfo": {
+      "fields": {
+        "chain_id": {
+          "rule": "required",
+          "type": "uint64",
+          "id": 1
+        },
+        "symbol": {
+          "rule": "required",
+          "type": "string",
+          "id": 2
+        },
+        "slip44": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 3
+        },
+        "name": {
+          "rule": "required",
+          "type": "string",
+          "id": 4
+        }
+      }
+    },
+    "EthereumTokenInfo": {
+      "fields": {
+        "address": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        },
+        "chain_id": {
+          "rule": "required",
+          "type": "uint64",
+          "id": 2
+        },
+        "symbol": {
+          "rule": "required",
+          "type": "string",
+          "id": 3
+        },
+        "decimals": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 4
+        },
+        "name": {
+          "rule": "required",
+          "type": "string",
+          "id": 5
+        }
+      }
+    },
+    "DefinitionType": {
+      "values": {
+        "ETHEREUM_NETWORK": 0,
+        "ETHEREUM_TOKEN": 1,
+        "SOLANA_TOKEN": 2
+      }
+    },
+    "SolanaTxTokenAccountInfo": {
+      "fields": {
+        "base_address": {
+          "rule": "required",
+          "type": "string",
+          "id": 1
+        },
+        "token_program": {
+          "rule": "required",
+          "type": "string",
+          "id": 2
+        },
+        "token_mint": {
+          "rule": "required",
+          "type": "string",
+          "id": 3
+        },
+        "token_account": {
+          "rule": "required",
+          "type": "string",
+          "id": 4
+        }
+      }
+    },
+    "SolanaTxAdditionalInfo": {
+      "fields": {
+        "token_accounts_infos": {
+          "rule": "repeated",
+          "type": "SolanaTxTokenAccountInfo",
+          "id": 1
+        },
+        "encoded_token": {
+          "type": "bytes",
+          "id": 2
+        }
+      }
+    },
+    "SolanaTokenInfo": {
+      "fields": {
+        "mint": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 1
+        },
+        "symbol": {
+          "rule": "required",
+          "type": "string",
+          "id": 2
+        },
+        "name": {
+          "rule": "required",
+          "type": "string",
+          "id": 3
+        }
+      }
+    },
+    "HDNodeType": {
+      "fields": {
+        "depth": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 1
+        },
+        "fingerprint": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 2
+        },
+        "child_num": {
+          "rule": "required",
+          "type": "uint32",
+          "id": 3
+        },
+        "chain_code": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 4
+        },
+        "private_key": {
+          "type": "bytes",
+          "id": 5
+        },
+        "public_key": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 6
+        }
+      }
+    },
+    "PaymentRequest": {
+      "fields": {
+        "nonce": {
+          "type": "bytes",
+          "id": 1
+        },
+        "recipient_name": {
+          "rule": "required",
+          "type": "string",
+          "id": 2
+        },
+        "memos": {
+          "rule": "repeated",
+          "type": "PaymentRequestMemo",
+          "id": 3
+        },
+        "amount": {
+          "type": "bytes",
+          "id": 6
+        },
+        "signature": {
+          "rule": "required",
+          "type": "bytes",
+          "id": 5
+        }
+      },
+      "nested": {
+        "PaymentRequestMemo": {
+          "fields": {
+            "text_memo": {
+              "type": "TextMemo",
+              "id": 1
+            },
+            "refund_memo": {
+              "type": "RefundMemo",
+              "id": 2
+            },
+            "coin_purchase_memo": {
+              "type": "CoinPurchaseMemo",
+              "id": 3
+            },
+            "text_details_memo": {
+              "type": "TextDetailsMemo",
+              "id": 4
+            }
+          }
+        },
+        "TextMemo": {
+          "fields": {
+            "text": {
+              "rule": "required",
+              "type": "string",
+              "id": 1
+            }
+          }
+        },
+        "TextDetailsMemo": {
+          "fields": {
+            "title": {
+              "rule": "required",
+              "type": "string",
+              "id": 1
+            },
+            "text": {
+              "rule": "required",
+              "type": "string",
+              "id": 2
+            }
+          }
+        },
+        "RefundMemo": {
+          "fields": {
+            "address": {
+              "rule": "required",
+              "type": "string",
+              "id": 1
+            },
+            "address_n": {
+              "rule": "repeated",
+              "type": "uint32",
+              "id": 2,
+              "options": {
+                "packed": false
+              }
+            },
+            "mac": {
+              "rule": "required",
+              "type": "bytes",
+              "id": 3
+            }
+          }
+        },
+        "CoinPurchaseMemo": {
+          "fields": {
+            "coin_type": {
+              "rule": "required",
+              "type": "uint32",
+              "id": 1
+            },
+            "amount": {
+              "rule": "required",
+              "type": "string",
+              "id": 2
+            },
+            "address": {
+              "rule": "required",
+              "type": "string",
+              "id": 3
+            },
+            "address_n": {
+              "rule": "repeated",
+              "type": "uint32",
+              "id": 4,
+              "options": {
+                "packed": false
+              }
+            },
+            "mac": {
+              "rule": "required",
+              "type": "bytes",
+              "id": 5
+            }
+          }
+        }
+      }
+    },
+    "BackupType": {
+      "values": {
+        "Bip39": 0,
+        "Slip39_Basic": 1,
+        "Slip39_Advanced": 2,
+        "Slip39_Single_Extendable": 3,
+        "Slip39_Basic_Extendable": 4,
+        "Slip39_Advanced_Extendable": 5
+      }
+    },
+    "SafetyCheckLevel": {
+      "values": {
+        "Strict": 0,
+        "PromptAlways": 1,
+        "PromptTemporarily": 2
+      }
+    },
+    "DisplayRotation": {
+      "values": {
+        "North": 0,
+        "East": 90,
+        "South": 180,
+        "West": 270
+      }
+    },
+    "HomescreenFormat": {
+      "values": {
+        "Toif": 1,
+        "Jpeg": 2,
+        "ToiG": 3
+      }
+    },
+    "RecoveryType": {
+      "values": {
+        "NormalRecovery": 0,
+        "DryRun": 1,
+        "UnlockRepeatedBackup": 2
+      }
+    }
+  }
+}

@@ -1,0 +1,105 @@
+# E2E Test: Restore Wallet Flow (15-word mnemonic)
+#
+# Tests the complete wallet restoration flow:
+# 1. Accept terms of service and set up PIN
+# 2. Select "Restore Wallet"
+# 3. Select 15 words and enter recovery phrase
+# 4. Set up encryption password
+# 5. Enter wallet name
+# 6. Complete wallet restoration
+#
+# Prerequisites:
+# - Set MNEMONIC_15 environment variable with 15-word recovery phrase
+#
+# Tags: onboarding, regression
+
+appId: ${MAESTRO_APP_ID}
+tags:
+  - onboarding
+  - regression
+---
+
+# Start fresh
+- runFlow: ../../utils/clear-and-launch.yaml
+
+# Accept terms, skip analytics, and set up PIN
+- runFlow: ../../utils/accept-terms.yaml
+
+# Tap on "Restore Existing Wallet"
+- tapOn:
+    id: "setup-restore-wallet-button"
+
+# Wait for restore screen (word count selector)
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "word-count-15"
+    timeout: 10000
+
+# Select 15 words option (adjust if using different word count)
+- waitForAnimationToEnd
+- tapOn:
+    id: "word-count-15"
+
+# Wait for UI to update
+- waitForAnimationToEnd
+- swipe:
+    direction: DOWN
+    duration: 50
+
+# Split mnemonic string into array for loop access
+- evalScript: ${output.words = MNEMONIC_15.split(' ')}
+
+# Enter mnemonic words using loop
+- waitForAnimationToEnd
+- tapOn:
+    id: "mnemonic-word-0"
+- evalScript: ${output.i = 0}
+- repeat:
+    times: 14
+    commands:
+      - inputText: ${output.words[output.i]}
+      - pressKey: Enter
+      - evalScript: ${output.i = output.i + 1}
+# Last word without Enter
+- inputText: ${output.words[14]}
+
+# Hide keyboard only on iOS (hideKeyboard triggers back navigation on Android)
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - hideKeyboard
+
+# Wait for UI to settle after keyboard dismissal
+- waitForAnimationToEnd
+
+# Wait for mnemonic validation
+- extendedWaitUntil:
+    visible:
+      id: "mnemonic-valid"
+    timeout: 10000
+
+# Dismiss keyboard by tapping outside input area
+- tapOn:
+    point: 50%, 30%
+
+# Wait for Next button to appear (only shows when mnemonic is valid)
+# The Next button is our validation signal - it only appears when isValid && mnemonic
+- extendedWaitUntil:
+    visible:
+      id: "restore-next-button"
+    timeout: 10000
+
+# Tap Next button
+- tapOn:
+    id: "restore-next-button"
+
+# Encryption Password Setup
+- runFlow: ../../utils/setup-password.yaml
+
+# Complete wallet creation (name input, create, wait for dashboard)
+- runFlow: ../../utils/complete-wallet-creation.yaml
+
+# Take unique screenshot for this flow
+- takeScreenshot: screenshots/restore-wallet-15-success

@@ -1,0 +1,6 @@
+appId: uk.pxkq.pnyx.dev
+---
+- tapOn:
+    id: "dev-logs-fab"
+- waitForAnimationToEnd:
+    timeout: 1500

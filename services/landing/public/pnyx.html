@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pnyx — private communities, self-custody wallet</title>
+<meta name="description" content="Pnyx is a privacy-preserving community forum on Midnight and a self-custody multi-chain wallet, in one mobile app. Membership is proved, not profiled.">
+<meta name="color-scheme" content="dark">
+<meta property="og:title" content="Pnyx — private communities, self-custody wallet">
+<meta property="og:description" content="Join under a persona that cannot be linked to you. Vote without anyone learning how. Hold your own keys across Cardano, Midnight and more.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.pxkq.uk/pnyx">
+<meta property="og:image" content="https://www.pxkq.uk/pnyx/shots/wallet-home.webp">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%A1%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#08081A;
+  --bg-2:#0C0C22;
+  --layer:#13132C;
+  --layer-2:#1A1A38;
+  --line:rgba(255,255,255,.10);
+  --line-2:rgba(255,255,255,.16);
+  --text:#FFFFFF;
+  --text-2:#A9B2C7;
+  --text-3:#6E788F;
+  --violet:#6C5CE7;
+  --violet-light:#8779EC;
+  --violet-deep:#5443D6;
+  --mint:#4ADE9B;
+  --amber:#F5B544;
+  --maxw:1120px;
+  --r:18px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+/* `.btn` and `.meta` set display, which beats the UA sheet's `[hidden]{display:none}` on
+   specificity — without this the download button shows while there is nothing to download. */
+[hidden]{display:none !important}
+
+/* ---------- chamfer ----------
+   The app's house shape: top-right and bottom-left cut, the rest square
+   (`ChamferCut: 'diagonal'` in app/src/components/Chamfer/chamfer-path.ts, cut
+   length ~21% of height clamped to 4–12px). React Native draws it as an SVG path
+   behind the content; on the web clip-path does the same job.
+
+   clip-path cuts the border off along the two diagonals, so a bordered chamfer is
+   two stacked layers: ::before is the border colour at full size, ::after the fill
+   inset by 1px. Content sits above both. */
+.cham{position:relative;isolation:isolate;--cut:12px;--cham-line:var(--line);--cham-fill:transparent}
+.cham::before,.cham::after{
+  content:"";position:absolute;z-index:-1;
+  clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)));
+}
+.cham::before{inset:0;background:var(--cham-line)}
+.cham::after{inset:1px;background:var(--cham-fill)}
+/* No border wanted — one layer, and the fill goes edge to edge. */
+.cham.solid::before{background:var(--cham-fill)}
+.cham.solid::after{display:none}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:17px;line-height:1.6;letter-spacing:-.011em;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+/* `height:auto` is load-bearing: the width/height attributes reserve the right box
+   while loading, and without this the shots inherit the attribute height and stretch. */
+img{max-width:100%;display:block;height:auto}
+.phone img{width:100%;height:auto;aspect-ratio:620/1392}
+a{color:inherit}
+h1,h2,h3{line-height:1.12;letter-spacing:-.03em;margin:0;font-weight:680}
+p{margin:0}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+.eyebrow{
+  font-size:12px;font-weight:650;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--violet-light);
+}
+
+/* ---------- glow backdrop ---------- */
+.aura{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.aura::before,.aura::after{content:"";position:absolute;border-radius:50%;filter:blur(120px);opacity:.5}
+.aura::before{width:720px;height:720px;top:-320px;left:50%;transform:translateX(-60%);
+  background:radial-gradient(circle,rgba(108,92,231,.55),transparent 65%)}
+.aura::after{width:620px;height:620px;top:620px;right:-240px;
+  background:radial-gradient(circle,rgba(74,222,155,.16),transparent 65%)}
+main,header,footer{position:relative;z-index:1}
+
+/* ---------- nav ---------- */
+.nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 0}
+.brand{display:flex;align-items:center;gap:11px;font-weight:700;letter-spacing:-.02em;font-size:19px}
+.mark{width:30px;height:30px;flex:none;color:var(--violet-light)}
+.nav-links{display:flex;gap:28px;font-size:14.5px;color:var(--text-2);font-weight:520}
+.nav-links a{text-decoration:none}
+.nav-links a:hover{color:var(--text)}
+@media(max-width:720px){.nav-links{display:none}}
+
+/* ---------- hero ---------- */
+.hero{padding:64px 0 0;text-align:center}
+.hero h1{font-size:clamp(40px,7.2vw,70px);max-width:15ch;margin:22px auto 0;font-weight:700}
+.hero h1 em{font-style:normal;background:linear-gradient(100deg,var(--violet-light),#9FE8FF 70%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{font-size:clamp(17px,2.1vw,20.5px);color:var(--text-2);max-width:62ch;margin:26px auto 0}
+.cta-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:34px}
+.btn{
+  display:inline-flex;align-items:center;gap:9px;padding:15px 28px;
+  font-size:15.5px;font-weight:620;text-decoration:none;transition:.16s;--cut:11px;
+}
+.btn-primary{color:#fff;--cham-fill:linear-gradient(100deg,var(--violet),var(--violet-deep));
+  filter:drop-shadow(0 10px 22px rgba(108,92,231,.42))}
+.btn-primary:hover{transform:translateY(-1px);filter:drop-shadow(0 14px 26px rgba(108,92,231,.6))}
+.btn-ghost{color:var(--text-2);--cham-line:var(--line-2);--cham-fill:var(--bg)}
+.btn-ghost:hover{color:var(--text);--cham-line:rgba(255,255,255,.34)}
+.badge{
+  display:inline-flex;align-items:center;gap:9px;margin-top:26px;padding:8px 16px 8px 12px;
+  font-size:13.5px;color:var(--text-2);--cut:8px;--cham-fill:#0A0A1E
+}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex:none;
+  box-shadow:0 0 0 4px rgba(245,181,68,.16)}
+
+/* ---------- phone fan ---------- */
+/* The outer two are rotated and pushed down, so they overhang the flex box by more
+   than its own height — without the bottom padding they collide with the next section. */
+.fan{display:flex;justify-content:center;align-items:flex-end;gap:clamp(-40px,-3vw,0px);
+  margin:58px auto 0;max-width:960px;padding-bottom:70px}
+.phone{
+  border-radius:26px;border:1px solid var(--line-2);overflow:hidden;background:var(--layer);
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.95),0 0 0 1px rgba(255,255,255,.04) inset;
+}
+.fan .phone{width:clamp(150px,22vw,250px)}
+.fan .phone:nth-child(1){transform:rotate(-5deg) translateY(28px)}
+.fan .phone:nth-child(3){transform:rotate(5deg) translateY(28px)}
+.fan .phone:nth-child(2){z-index:2;width:clamp(170px,25vw,282px)}
+@media(max-width:620px){
+  .fan{gap:10px}
+  .fan .phone:nth-child(1),.fan .phone:nth-child(3){display:none}
+  .fan .phone:nth-child(2){width:min(78vw,300px)}
+}
+
+/* ---------- sections ---------- */
+section{padding:104px 0}
+.sec-head{max-width:680px}
+.sec-head.center{margin:0 auto;text-align:center}
+.sec-head h2{font-size:clamp(30px,4.4vw,46px);margin-top:16px}
+.sec-head p{color:var(--text-2);margin-top:18px;font-size:clamp(16px,1.9vw,18.5px)}
+
+/* ---------- pillars ---------- */
+.pillars{display:grid;gap:20px;grid-template-columns:repeat(3,1fr);margin-top:52px}
+@media(max-width:900px){.pillars{grid-template-columns:1fr}}
+.pillar{
+  padding:30px 28px 32px;--cut:16px;
+  --cham-fill:linear-gradient(170deg,#15152F,#0D0D22);
+}
+.pillar .ico{width:34px;height:34px;color:var(--violet-light);margin-bottom:18px}
+.pillar h3{font-size:20.5px}
+.pillar p{color:var(--text-2);margin-top:11px;font-size:15.8px}
+
+/* ---------- split feature rows ---------- */
+.split{display:grid;grid-template-columns:1fr 340px;gap:72px;align-items:center}
+.split.flip{grid-template-columns:340px 1fr}
+.split.flip .copy{order:2}
+@media(max-width:940px){
+  .split,.split.flip{grid-template-columns:1fr;gap:40px}
+  .split.flip .copy{order:0}
+  .shot-wrap{max-width:320px;margin:0 auto}
+}
+.copy h2{font-size:clamp(28px,3.9vw,40px);margin-top:14px}
+.copy > p{color:var(--text-2);margin-top:18px;font-size:17.5px}
+.ticks{list-style:none;padding:0;margin:26px 0 0;display:grid;gap:13px}
+.ticks li{display:flex;gap:12px;align-items:flex-start;color:var(--text-2);font-size:16px}
+.ticks svg{width:19px;height:19px;flex:none;margin-top:3px;color:var(--mint)}
+.ticks b{color:var(--text);font-weight:600}
+.shot-wrap{max-width:286px;margin-inline:auto}
+.shot-wrap .phone{width:100%}
+
+/* ---------- on-chain / off-chain ---------- */
+.ledger{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:48px}
+@media(max-width:760px){.ledger{grid-template-columns:1fr}}
+.ledger-card{padding:28px;--cut:16px;--cham-fill:#101026}
+.ledger-card.on{--cham-line:rgba(108,92,231,.5);--cham-fill:linear-gradient(170deg,#1C1746,#0E0E28)}
+.ledger-card h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+.ledger-card.on h3{color:var(--violet-light)}
+.ledger-card ul{list-style:none;padding:0;margin:20px 0 0;display:grid;gap:12px}
+.ledger-card li{font-size:16.5px;display:flex;gap:11px;align-items:baseline}
+.ledger-card li span{color:var(--text-3);font-size:14px}
+.note{margin-top:26px;color:var(--text-3);font-size:15px;max-width:70ch}
+
+/* ---------- grid of small features ---------- */
+/* One chamfer around the whole grid; the 1px gaps draw the cell dividers. */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:52px;
+  background:var(--line);padding:1px;--cut:18px;
+  clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)))}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+.cell{background:var(--bg-2);padding:28px 26px 30px}
+.cell h4{margin:0;font-size:17px;font-weight:640;letter-spacing:-.015em}
+.cell p{color:var(--text-2);font-size:15.2px;margin-top:9px}
+
+/* ---------- gallery ---------- */
+.gallery{display:flex;gap:18px;overflow-x:auto;padding:52px 24px 14px;scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch}
+.gallery::-webkit-scrollbar{height:7px}
+.gallery::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:99px}
+.gallery figure{margin:0;flex:none;width:238px;scroll-snap-align:center}
+.gallery figcaption{color:var(--text-3);font-size:13.8px;margin-top:14px;text-align:center}
+
+/* ---------- get the app ---------- */
+.warn{display:flex;gap:18px;margin-top:44px;padding:28px 30px;--cut:16px;
+  --cham-line:rgba(245,181,68,.45);--cham-fill:linear-gradient(170deg,#241C0E,#110E1F)}
+.warn > svg{width:26px;height:26px;flex:none;color:var(--amber);margin-top:3px}
+.warn h3{font-size:19px}
+.warn ul{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:12px}
+.warn li{color:var(--text-2);font-size:16px;padding-left:18px;position:relative}
+.warn li::before{content:"";position:absolute;left:0;top:11px;width:6px;height:6px;
+  background:var(--amber);opacity:.75}
+.warn b{color:var(--text);font-weight:620}
+
+.dl{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:22px;align-items:start}
+@media(max-width:860px){.dl{grid-template-columns:1fr}}
+.dl-card{padding:30px 28px 34px;--cut:16px;--cham-fill:#101026}
+.dl-head{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.dl-head h3{font-size:23px}
+.pill{padding:5px 13px;font-size:12px;letter-spacing:.07em;text-transform:uppercase;
+  font-weight:620;color:var(--text-3);--cut:6px;--cham-fill:#191936}
+.pill.ready{color:#0B1020;--cham-line:transparent;--cham-fill:var(--mint)}
+.dl-sub{color:var(--text-2);margin-top:12px;font-size:16px}
+.dl-btn{margin-top:22px}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px;margin:24px 0 0}
+.meta .wide{grid-column:1/-1}
+.meta dt{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3)}
+.meta dd{margin:3px 0 0;font-size:15px;color:var(--text)}
+.meta code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.2px;
+  color:var(--text-2);word-break:break-all;line-height:1.45}
+.steps{margin:26px 0 0;padding-left:22px;display:grid;gap:12px;color:var(--text-2);font-size:15.6px}
+.steps li::marker{color:var(--violet-light);font-weight:650}
+.steps b{color:var(--text);font-weight:600}
+.steps code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.4px;
+  background:rgba(255,255,255,.07);padding:1px 6px;color:var(--text)}
+
+/* ---------- stack ---------- */
+.stack{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}
+.chip{padding:9px 17px;font-size:14px;color:var(--text-2);--cut:8px;--cham-fill:#101026}
+
+/* ---------- closing ---------- */
+.closing{text-align:center;border-top:1px solid var(--line);padding:100px 0}
+.closing h2{font-size:clamp(30px,4.6vw,48px)}
+.closing p{color:var(--text-2);max-width:56ch;margin:20px auto 0}
+
+footer{border-top:1px solid var(--line);padding:38px 0 56px;color:var(--text-3);font-size:14.5px}
+.foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+</style>
+</head>
+<body>
+<div class="aura"></div>
+
+<header class="wrap">
+  <nav class="nav">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 174 175" fill="currentColor" aria-hidden="true">
+        <path fill="none" stroke="currentColor" stroke-width="16.045" d="M147.5 36.734a78.978 78.978 0 1 1-121 0"/>
+        <path fill="none" stroke="currentColor" stroke-miterlimit="10" stroke-width="12" d="M16.045 87.5h18a52.955 52.955 0 0 0 105.91 0h-24a28.955 28.955 0 0 1-57.91 0v-6"/>
+        <path d="M53.049 53.549h16.334v16.334H53.049zm25.784 0h16.334v16.334H78.833zm25.784 0h16.334v16.334h-16.334z"/>
+      </svg>
+      Pnyx
+    </div>
+    <div class="nav-links">
+      <a href="#privacy">Privacy</a>
+      <a href="#communities">Communities</a>
+      <a href="#wallet">Wallet</a>
+      <a href="#security">Security</a>
+      <a href="#stack">Under the hood</a>
+      <a href="https://github.com/jorbuedo/pnyx" rel="noopener">Source</a>
+      <a href="#get">Get it</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+
+<!-- ============ HERO ============ -->
+<section class="hero wrap" style="padding-bottom:0">
+  <div class="eyebrow">Private governance on Midnight</div>
+  <h1>Speak freely. Prove you belong. Stay <em>unlinkable</em>.</h1>
+  <p class="lede">
+    Pnyx is a community forum where membership is something you <em>prove</em>, not something you
+    advertise — and a self-custody wallet for Cardano, Midnight and beyond. One app. No accounts,
+    no passwords, no profile following you from room to room.
+  </p>
+  <div class="cta-row">
+    <a class="btn btn-primary cham solid" href="#get">
+      Get the pre-release build
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12m0 0 5-5m-5 5-5-5M4 20h16"/></svg>
+    </a>
+    <a class="btn btn-ghost cham" href="#privacy">See how it works</a>
+  </div>
+  <div class="badge cham"><span class="dot"></span> Pre-release, outside the app stores · Midnight test network only</div>
+
+  <div class="fan">
+    <div class="phone"><img src="/pnyx/shots/discover.webp" width="620" height="1392" alt="Discover screen listing communities, each marked as on-chain" decoding="async"></div>
+    <div class="phone"><img src="/pnyx/shots/wallet-home.webp" width="620" height="1392" alt="Wallet home showing a tADA balance, NIGHT and Cardano holdings, and recent activity"></div>
+    <div class="phone"><img src="/pnyx/shots/join-persona.webp" width="620" height="1392" alt="Join sheet offering to appear as your Pnyx identity or under a display name scoped to one community" decoding="async"></div>
+  </div>
+</section>
+
+<!-- ============ PILLARS ============ -->
+<section class="wrap" id="privacy">
+  <div class="sec-head center">
+    <div class="eyebrow">The whole idea</div>
+    <h2>Privacy that is structural, not a setting</h2>
+    <p>
+      Most apps ask you to trust a promise. Pnyx is built so the promise is hard to break — the
+      things that would identify you are never collected, never published, and in most cases never
+      leave your phone.
+    </p>
+  </div>
+
+  <div class="pillars">
+    <div class="pillar cham">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.4 9.1 8 10 4.6-.9 8-5 8-10V6l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg>
+      <h3>Your keys are your account</h3>
+      <p>
+        There is no sign-up, no email, no password to forget or leak. A key on your device is the
+        identity, unlocked by your fingerprint or face, and a signature is how you walk through
+        any door.
+      </p>
+    </div>
+    <div class="pillar cham">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.4"/><circle cx="17" cy="16" r="3.4"/><path d="M4 20c.7-2.8 2.6-4.3 5-4.3" stroke-dasharray="2 2.6"/></svg>
+      <h3>A different you in every room</h3>
+      <p>
+        You join each community under a persona that exists only there. The chain records that
+        <em>a</em> member joined, never which identity. Two of your personas cannot be linked to each
+        other, and neither can be traced back to you.
+      </p>
+    </div>
+    <div class="pillar cham">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="19" cy="17" r="2.6"/></svg>
+      <h3>Votes nobody can read</h3>
+      <p>
+        Cast a vote and the result is counted on chain without anyone — moderators and us
+        included — learning how you voted. Double-voting is impossible by construction, not by
+        policy.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMMUNITIES ============ -->
+<section class="wrap" id="communities">
+  <div class="split">
+    <div class="copy">
+      <div class="eyebrow">Communities</div>
+      <h2>Every community is its own contract</h2>
+      <p>
+        Creating a community deploys a smart contract on Midnight, and its address is derived from
+        what it was created with. So anyone can check that the community in front of them is the one
+        it claims to be — without asking us, and without taking our word for it.
+      </p>
+      <ul class="ticks">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5.5 5.5L20 7"/></svg><span><b>Channels and polls</b> in a layout that already feels familiar — community rail, channel list, conversation.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5.5 5.5L20 7"/></svg><span><b>Bans that actually hold.</b> Joining spends a one-per-community marker derived from your identity, so a removed member cannot stroll back in under a new persona.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5.5 5.5L20 7"/></svg><span><b>Invite-only, or proof-gated.</b> A founder can require an invite code — or set a condition a Cardano wallet can prove, and let the invite be issued on chain, automatically.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5.5 5.5L20 7"/></svg><span><b>Direct messages</b> outside every community, end-to-end encrypted with MLS. The relay moves bytes it cannot read.</span></li>
+      </ul>
+    </div>
+    <div class="shot-wrap">
+      <div class="phone"><img src="/pnyx/shots/join-persona.webp" width="620" height="1392" alt="Join sheet offering to appear as your Pnyx identity, or under a display name that exists only in this community" decoding="async"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ON CHAIN / OFF CHAIN ============ -->
+<section class="wrap">
+  <div class="sec-head">
+    <div class="eyebrow">No hand-waving</div>
+    <h2>What goes on the ledger, and what never does</h2>
+    <p>
+      "On-chain" is not automatically a virtue. A public ledger is permanent and readable by
+      everyone, for ever — which is exactly right for a membership proof and exactly wrong for a
+      conversation. So we split them, deliberately.
+    </p>
+  </div>
+
+  <div class="ledger">
+    <div class="ledger-card on cham">
+      <h3>On chain, forever, verifiable</h3>
+      <ul>
+        <li>Membership <span>— as an anonymous leaf</span></li>
+        <li>Votes <span>— tallied, never attributed</span></li>
+        <li>Moderation <span>— bans and moderators</span></li>
+        <li>Your identity anchor <span>— a commitment, not a name</span></li>
+      </ul>
+    </div>
+    <div class="ledger-card cham">
+      <h3>Off chain, on purpose</h3>
+      <ul>
+        <li>Posts and replies</li>
+        <li>Channels and descriptions</li>
+        <li>Direct messages <span>— E2E encrypted</span></li>
+        <li>Anything that reads like a sentence</li>
+      </ul>
+    </div>
+  </div>
+  <p class="note">
+    Zero-knowledge proofs are generated on your phone, on-device, by a native Rust prover. The
+    thing that proves you are a member never needs to tell anyone who you are — and the secret it
+    is built from never leaves the handset.
+  </p>
+</section>
+
+<!-- ============ WALLET ============ -->
+<section class="wrap" id="wallet">
+  <div class="split flip">
+    <div class="shot-wrap">
+      <div class="phone"><img src="/pnyx/shots/receive-chains.webp" width="620" height="1392" alt="Receive screen listing Cardano, Midnight unshielded, shielded and DUST addresses, plus Bitcoin and Ethereum" decoding="async"></div>
+    </div>
+    <div class="copy">
+      <div class="eyebrow">Wallet</div>
+      <h2>A real wallet, not a login button</h2>
+      <p>
+        The identity that gets you into a community is deliberately kept apart from the money. Next
+        to it sits a full self-custody wallet: Cardano and Midnight as first-class citizens, with
+        addresses derived for the chains you also live on.
+      </p>
+      <ul class="ticks">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5.5 5.5L20 7"/></svg><span><b>Cardano, fully.</b> Balances, native assets and NFTs, multi-recipient sends, staking and DRep delegation, swaps, shared multi-signature wallets.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5.5 5.5L20 7"/></svg><span><b>Midnight, including the shielded side.</b> Unshielded, shielded and DUST addresses, side by side.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5.5 5.5L20 7"/></svg><span><b>Bitcoin, Ethereum and Solana addresses</b> derived from the same recovery phrase, so you can prove on-chain ownership of them. Balances and sending for those three are not here yet, and the app says so rather than pretending.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5.5 5.5L20 7"/></svg><span><b>Hardware and air-gapped.</b> Ledger and Trezor for the non-Midnight chains, plus QR signing for a device that never touches a network.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" style="padding-top:0">
+  <div class="split">
+    <div class="copy">
+      <div class="eyebrow">Transaction review</div>
+      <h2>Read the transaction, not a summary of it</h2>
+      <p>
+        Before anything is signed, Pnyx shows you what it will actually do — grouped by whose money
+        is moving, down to every input, every output, every token in the bag, and the raw bytes if
+        you want them. The wallet knows which addresses are yours, so "sending to yourself" looks
+        like what it is instead of looking like a loss.
+      </p>
+      <p style="margin-top:16px;color:var(--text-3);font-size:15.5px">
+        The same review surface is used everywhere a signature is requested — a send you started, a
+        dApp that asked, or a co-signer's proposal. One screen to learn, not five.
+      </p>
+    </div>
+    <div class="shot-wrap">
+      <div class="phone"><img src="/pnyx/shots/review-utxos.webp" width="620" height="1392" alt="Transaction review showing one input with its full native-asset bag and two outputs" decoding="async"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GALLERY ============ -->
+<section style="padding-bottom:60px">
+  <div class="wrap sec-head center">
+    <div class="eyebrow">A look around</div>
+    <h2>Built to be used, not admired</h2>
+  </div>
+  <div class="gallery">
+    <figure><div class="phone"><img src="/pnyx/shots/wallet-home.webp" width="620" height="1392" alt="Wallet home" decoding="async"></div><figcaption>Balances and activity, every chain in one place</figcaption></figure>
+    <figure><div class="phone"><img src="/pnyx/shots/add-wallet.webp" width="620" height="1392" alt="Add wallet options" decoding="async"></div><figcaption>Create, restore, import a backup, or watch an address</figcaption></figure>
+    <figure><div class="phone"><img src="/pnyx/shots/receive-qr.webp" width="620" height="1392" alt="Receive QR code" decoding="async"></div><figcaption>QR is a first-class surface, not an afterthought</figcaption></figure>
+    <figure><div class="phone"><img src="/pnyx/shots/join-persona.webp" width="620" height="1392" alt="Choosing how to appear when joining" decoding="async"></div><figcaption>Choose how you appear, per community</figcaption></figure>
+    <figure><div class="phone"><img src="/pnyx/shots/review-utxos.webp" width="620" height="1392" alt="Transaction review" decoding="async"></div><figcaption>Every input and output, before you sign</figcaption></figure>
+    <figure><div class="phone"><img src="/pnyx/shots/menu.webp" width="620" height="1392" alt="Settings menu" decoding="async"></div><figcaption>Connections, security and recovery in one hub</figcaption></figure>
+  </div>
+</section>
+
+<!-- ============ SECURITY ============ -->
+<section class="wrap" id="security">
+  <div class="sec-head">
+    <div class="eyebrow">Security</div>
+    <h2>The boring parts, taken seriously</h2>
+    <p>
+      Self-custody is only a gift if losing your phone is survivable. These are the parts we would
+      not ship without.
+    </p>
+  </div>
+
+  <div class="grid">
+    <div class="cell">
+      <h4>No app password, ever</h4>
+      <p>Your recovery phrase lives in the phone's hardware keystore and is released by biometrics or your device passcode. There is no app-level password to guess, phish, or forget.</p>
+    </div>
+    <div class="cell">
+      <h4>Passkey recovery</h4>
+      <p>Restore an account on a new device with your face or fingerprint, using platform passkeys and the WebAuthn PRF extension.</p>
+    </div>
+    <div class="cell">
+      <h4>Encrypted export you can keep</h4>
+      <p>An open, documented backup format (CIP-0301) sealed with Argon2id and XChaCha20-Poly1305. Your password, your file, our maths — all of it inspectable.</p>
+    </div>
+    <div class="cell">
+      <h4>Hardware wallets</h4>
+      <p>Ledger and Trezor are supported for the non-Midnight chains, so the key can stay somewhere the phone can never reach it.</p>
+    </div>
+    <div class="cell">
+      <h4>Air-gapped signing</h4>
+      <p>Move a transaction to an offline device and its signature back, entirely by QR code.</p>
+    </div>
+    <div class="cell">
+      <h4>A signing history</h4>
+      <p>Every signature the wallet has produced, listed. Nothing is signed quietly in the background.</p>
+    </div>
+    <div class="cell">
+      <h4>Shared wallets</h4>
+      <p>Multi-signature wallets with co-signers, from creation through to collecting the last signature.</p>
+    </div>
+    <div class="cell">
+      <h4>dApp connections you control</h4>
+      <p>CIP-30 connections on mobile, each one listed and revocable from a single screen.</p>
+    </div>
+    <div class="cell">
+      <h4>Twelve languages</h4>
+      <p>English plus eleven more, with number and currency formatting that respects where you actually live.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STACK ============ -->
+<section class="wrap" id="stack">
+  <div class="split">
+    <div class="copy">
+      <div class="eyebrow">Under the hood</div>
+      <h2>For the people who will ask</h2>
+      <p>
+        One codebase, React Native on both platforms, Effect-TS end to end. The zero-knowledge
+        prover is native Rust running on the handset — not a proving service we could quietly read.
+        We run our own Midnight indexer rather than renting somebody else's view of the chain.
+      </p>
+      <p style="margin-top:16px;color:var(--text-3);font-size:15.5px">
+        The contracts are written in Compact. Transaction fees for community actions are sponsored,
+        so joining a conversation does not require first acquiring a token.
+      </p>
+      <p style="margin-top:16px;color:var(--text-3);font-size:15.5px">
+        You can read all of it: the app, the contracts, the chain and crypto layers are
+        <a href="https://github.com/jorbuedo/pnyx" rel="noopener">open source under Apache-2.0</a>.
+        A wallet asking to hold your keys should be auditable by the people it asks.
+      </p>
+      <div class="stack">
+        <span class="chip cham">Midnight</span>
+        <span class="chip cham">Compact contracts</span>
+        <span class="chip cham">On-device ZK proving (Rust)</span>
+        <span class="chip cham">Cardano</span>
+        <span class="chip cham">CIP-30 · CIP-0301</span>
+        <span class="chip cham">MLS (RFC 9420)</span>
+        <span class="chip cham">Effect-TS</span>
+        <span class="chip cham">React Native + Expo</span>
+        <span class="chip cham">Hardware keystore / Secure Enclave</span>
+        <span class="chip cham">Apache-2.0</span>
+      </div>
+    </div>
+    <div class="shot-wrap">
+      <div class="phone"><img src="/pnyx/shots/menu.webp" width="620" height="1392" alt="Menu showing connections, network and security settings" decoding="async"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GET IT ============ -->
+<section class="wrap" id="get">
+  <div class="sec-head">
+    <div class="eyebrow">Get the app</div>
+    <h2>A pre-release build, handed to you directly</h2>
+    <p>
+      Pnyx is not on Google Play or the App Store yet. You install it yourself, from the file
+      below. That means no automatic updates, a few extra taps, and some warnings from your
+      phone that are worth reading rather than clicking past.
+    </p>
+  </div>
+
+  <div class="warn cham" role="note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v5M12 18h.01"/></svg>
+    <div>
+      <h3>Read this before you install</h3>
+      <ul>
+        <li><b>This is not production software.</b> It is an early build on a test network, published to be broken. Expect bugs, expect screens to change, and expect to lose what you put in it.</li>
+        <li><b>Do not put real funds in a wallet this app generates.</b> The keys it creates live on a phone running pre-release code. If you want to touch real assets, <b>connect a hardware wallet</b> (Ledger or Trezor) so the key stays on the device and never enters the app.</li>
+        <li><b>Communities, posts and votes are disposable.</b> Nothing on the test network carries over to mainnet.</li>
+        <li><b>Nobody from Pnyx will ever ask for your recovery phrase.</b> Not in a community, not in a DM, not by email. Anyone who does is stealing from you.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="dl">
+    <div class="dl-card cham" id="dl-android">
+      <div class="dl-head">
+        <h3>Android</h3>
+        <span class="pill cham" data-status>Checking…</span>
+      </div>
+      <p class="dl-sub" data-sub>Looking for the latest published build.</p>
+      <a class="btn btn-primary cham solid dl-btn" data-link hidden>
+        Download the APK
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12m0 0 5-5m-5 5-5-5M4 20h16"/></svg>
+      </a>
+      <dl class="meta" data-meta hidden>
+        <div><dt>Version</dt><dd data-version></dd></div>
+        <div><dt>Size</dt><dd data-size></dd></div>
+        <div><dt>Published</dt><dd data-date></dd></div>
+        <div class="wide"><dt>SHA-256</dt><dd><code data-sha></code></dd></div>
+      </dl>
+      <ol class="steps">
+        <li>Open this page <b>on the phone</b> and tap Download. (Or, over USB: <code>adb install pnyx-…apk</code>.)</li>
+        <li>Android will block the install because the file did not come from Play. When it offers <b>Settings</b>, allow <b>“Install unknown apps”</b> for your browser, then tap the download again.</li>
+        <li><b>Play Protect will warn you about an unrecognised developer.</b> That warning is correct and expected for any app outside the store. Choose <b>“Install anyway”</b> only if you trust where you got this link.</li>
+        <li>Your phone needs a <b>screen lock</b> (PIN, pattern or biometric). The app stores keys in the hardware keystore and will stop and tell you if there is no lock to protect them.</li>
+        <li>Optional, and worth it: check the file matches the checksum above with <code>sha256sum</code> before installing.</li>
+      </ol>
+    </div>
+
+    <div class="dl-card cham" id="dl-ios">
+      <div class="dl-head">
+        <h3>iPhone</h3>
+        <span class="pill cham" data-status>Not yet</span>
+      </div>
+      <p class="dl-sub">
+        iOS cannot be installed from a plain downloaded file the way Android can. Apple will only
+        run an app that is <b>signed</b> — either for a named list of devices, or through
+        <b>TestFlight</b>. Both need an Apple Developer Program membership, and that is the piece
+        Pnyx does not have yet.
+      </p>
+      <ol class="steps">
+        <li>The iOS app is <b>built and working</b>, on-device zero-knowledge proving included. The build is not what is missing.</li>
+        <li>Signing a build with a free Apple ID is not a way round it: those profiles die after seven days, and they cannot carry the entitlements Pnyx needs for <b>passkey recovery and deep links</b>. A build with those stripped would look like Pnyx with its recovery broken.</li>
+        <li>When it opens, the invite will be a <b>TestFlight link or a signed install link</b> from this domain. Treat any loose “.ipa download” claiming to be Pnyx as fake.</li>
+      </ol>
+      <p class="dl-sub" style="margin-top:22px">
+        In the meantime, if you have a Mac, the <b>Simulator build</b> below runs the real iOS app.
+      </p>
+    </div>
+
+    <div class="dl-card cham" id="dl-ios-sim" style="grid-column:1/-1">
+      <div class="dl-head">
+        <h3>iOS Simulator <span style="color:var(--text-3);font-weight:500">· for Macs</span></h3>
+        <span class="pill cham" data-status>Checking…</span>
+      </div>
+      <p class="dl-sub" data-sub>Looking for the latest published build.</p>
+      <a class="btn btn-primary cham solid dl-btn" data-link hidden>
+        Download the Simulator app
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12m0 0 5-5m-5 5-5-5M4 20h16"/></svg>
+      </a>
+      <dl class="meta" data-meta hidden>
+        <div><dt>Version</dt><dd data-version></dd></div>
+        <div><dt>Size</dt><dd data-size></dd></div>
+        <div><dt>Published</dt><dd data-date></dd></div>
+        <div class="wide"><dt>SHA-256</dt><dd><code data-sha></code></dd></div>
+      </dl>
+      <ol class="steps">
+        <li>Needs a <b>Mac with Xcode</b> installed. This is not an iPhone build and cannot be put on a phone.</li>
+        <li>Unzip it, then either drag the <code>.app</code> onto a running Simulator window, or run <code>xcrun simctl install booted Pnyx.app</code>.</li>
+        <li><b>It is not signed, and it does not need to be</b> — that is exactly why it can be handed out without an Apple membership.</li>
+        <li>⚠️ A simulator has no Secure Enclave, no push and no passkeys, so <b>key storage falls back to software and recovery flows will not behave like a real device</b>. Look, don't trust it with anything.</li>
+      </ol>
+    </div>
+  </div>
+
+  <p class="note">
+    Builds are published straight from the repository to our own storage, and each one lists the
+    commit it came from. If a download ever fails its checksum, do not install it.
+  </p>
+</section>
+
+<!-- ============ CLOSING ============ -->
+<section class="closing wrap">
+  <div class="eyebrow">Where things stand</div>
+  <h2>Early, honest, and on a test network</h2>
+  <p>
+    Pnyx is in early access and currently runs against Midnight's test network. Treat everything in
+    it as disposable: communities, posts and votes will not carry over when it moves to mainnet. The
+    point right now is to find what breaks.
+  </p>
+  <div class="cta-row">
+    <a class="btn btn-ghost cham" href="#privacy">Back to the top</a>
+  </div>
+</section>
+
+</main>
+
+<script>
+/* The download card is filled from `/pnyx/releases.json`, a static asset written by
+   `infra/releases/publish.ts`. Fetching it costs no Worker invocation, which is why it is an
+   asset rather than an R2 read. The card's markup ships in the "checking" state, so a reader
+   with JS off, or a fetch that fails, is told the truth ("could not be read") rather than being
+   shown a button that leads nowhere. */
+function hydrateDownloadCard(cardId, platform, describe) {
+  var card = document.getElementById(cardId)
+  if (!card) return
+
+  var q = function (sel) { return card.querySelector(sel) }
+  var status = q('[data-status]')
+  var sub = q('[data-sub]')
+
+  var say = function (label, text) {
+    status.textContent = label
+    sub.textContent = text
+  }
+
+  var mib = function (bytes) { return (bytes / 1024 / 1024).toFixed(1) + ' MiB' }
+
+  fetch('/pnyx/releases.json', {cache: 'no-store'})
+    .then(function (res) {
+      if (res.status === 404) return null
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      return res.json()
+    })
+    .then(function (manifest) {
+      var release = manifest && manifest.releases && manifest.releases[platform]
+      if (!release) {
+        say('Not yet', 'No build has been published for this yet. Check back shortly.')
+        return
+      }
+
+      status.textContent = 'Ready'
+      status.classList.add('ready')
+      sub.textContent = describe(release)
+
+      var link = q('[data-link]')
+      link.href = release.url
+      link.setAttribute('download', release.file)
+      link.hidden = false
+
+      q('[data-version]').textContent = release.version + ' (' + release.commit + ')'
+      q('[data-size]').textContent = mib(release.bytes)
+      q('[data-date]').textContent = new Date(release.published)
+        .toLocaleDateString(undefined, {year: 'numeric', month: 'short', day: 'numeric'})
+      q('[data-sha]').textContent = release.sha256
+      q('[data-meta]').hidden = false
+    })
+    .catch(function (error) {
+      // Never leave the card claiming to be "checking" — a stuck spinner reads as a slow page
+      // rather than as a failure, and the reader has no way to tell the difference.
+      say('Unavailable', 'The release list could not be read (' + error.message + '). Try reloading.')
+    })
+}
+
+hydrateDownloadCard('dl-android', 'android', function (r) {
+  return 'Built from commit ' + r.commit + ', pointed at the ' + r.buildEnv +
+    ' backend and the Midnight test network.'
+})
+hydrateDownloadCard('dl-ios-sim', 'ios-sim', function (r) {
+  return 'The real iOS app, from commit ' + r.commit + ', for a Simulator on a Mac. Not a phone build.'
+})
+</script>
+
+<footer class="wrap">
+  <div class="foot">
+    <div class="brand" style="font-size:16px">
+      <svg class="mark" style="width:22px;height:22px" viewBox="0 0 174 175" fill="currentColor" aria-hidden="true">
+        <path fill="none" stroke="currentColor" stroke-width="16.045" d="M147.5 36.734a78.978 78.978 0 1 1-121 0"/>
+        <path fill="none" stroke="currentColor" stroke-miterlimit="10" stroke-width="12" d="M16.045 87.5h18a52.955 52.955 0 0 0 105.91 0h-24a28.955 28.955 0 0 1-57.91 0v-6"/>
+        <path d="M53.049 53.549h16.334v16.334H53.049zm25.784 0h16.334v16.334H78.833zm25.784 0h16.334v16.334h-16.334z"/>
+      </svg>
+      Pnyx
+    </div>
+    <div>
+      Screenshots taken from a live build on the Midnight test network.
+      <a href="https://github.com/jorbuedo/pnyx" rel="noopener">Source on GitHub</a>.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

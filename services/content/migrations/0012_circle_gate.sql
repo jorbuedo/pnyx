@@ -1,0 +1,12 @@
+-- Whether a circle can be joined without an invite.
+--
+-- The gate was decided on 2026-09-06 (`docs/BOUNDED_STATE_ARCHITECTURE.md` §10, `product/STATUS.md`
+-- §5): it is the on-chain **invite**, not a predicate in `join`. But the content plane never recorded
+-- which circles are gated, so discovery could not tell a place you may enter from one you may not —
+-- and listing a community nobody can join is a promise the UI must not make.
+--
+-- NOT NULL DEFAULT 1: `isOpen` is sealed into the contract's initial state and therefore into its
+-- address, so it is a property a circle *has* from birth, never absent. Every circle that exists today
+-- was deployed with `isOpen: true` hard-coded, so backfilling them as open is the true answer rather
+-- than a convenient one.
+ALTER TABLE circles ADD COLUMN is_open INTEGER NOT NULL DEFAULT 1;

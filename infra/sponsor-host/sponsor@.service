@@ -1,0 +1,61 @@
+[Unit]
+Description=Midnight fee sponsor for %i (balances and submits device-proven transactions)
+After=network-online.target
+Wants=network-online.target
+# A wallet that cannot reach chain should keep retrying, not get stopped out after five attempts. This
+# key only works in [Unit] — systemd ignores it under [Service] and logs "Unknown key".
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=sponsor
+Group=sponsor
+# The working directory is the state dir, not the code dir: importing @midnight-ntwrk/testkit-js opens a
+# pino log file under `logs/tests/` relative to the process CWD, at module scope, before any code of ours
+# runs. With the code tree read-only that is an EROFS crash-loop. bun resolves node_modules from the
+# script's own path, so an absolute ExecStart keeps /opt/sponsor read-only.
+WorkingDirectory=/var/lib/sponsor
+# ⚠️ **Two files, in this order.** The shared one carries the token, the origin and the sponsorship
+# policy — the code digests are per compiled *template*, so they are the same on every network. The
+# per-network one carries MIDNIGHT_NETWORK, its port, its DUST snapshot and its backlog. A later
+# EnvironmentFile wins, so anything the network file sets overrides the shared value deliberately.
+EnvironmentFile=/etc/sponsor/sponsor.env
+EnvironmentFile=/etc/sponsor/sponsor.%i.env
+ExecStart=/usr/local/bin/bun /opt/sponsor/services/content/src/sponsor-server.ts
+
+# An accepted transaction is a promise to a client that has already gone away, so always come back and
+# replay the backlog.
+Restart=always
+RestartSec=10
+
+# ⚠️ **Nothing here staggers the boots, deliberately.** A snapshot-less cold sync saturates one core for
+# its whole duration (~590 MiB RSS peak, measured on this box) and there are two cores for three
+# networks — but that is a *one-time* cost per network, and an `ExecStartPre=sleep` would pay it on every
+# restart forever to fix an event that happens once. A restart from a DUST snapshot is ~70 s, so
+# contention in steady state is not a problem worth machinery. Bring a new network up last and on its
+# own; the runbook says so, and the router answers 503 with the reason meanwhile.
+
+# The only secret is read from CHAIN_SEED_FILE at boot, never from the environment: an env var shows up
+# in `ps` and in anything that dumps the environment on a crash.
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+# The dust-state snapshots and the submit backlogs. Nothing else on the box is writable.
+ReadWritePaths=/var/lib/sponsor
+# ProtectHome=yes hides /home, and bun wants a HOME it can use for scratch.
+Environment=HOME=/var/lib/sponsor
+
+StandardOutput=journal
+StandardError=journal
+# Per instance, so `journalctl -t sponsor-preview` reads one network's log.
+SyslogIdentifier=sponsor-%i
+
+[Install]
+WantedBy=multi-user.target

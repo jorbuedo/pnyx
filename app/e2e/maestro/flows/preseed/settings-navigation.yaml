@@ -1,0 +1,61 @@
+# E2E Test: Pre-seeded Wallet - Settings Navigation
+#
+# Tests navigation to settings in a pre-seeded wallet.
+# This test assumes the app is built with the e2e-preseed profile,
+# which auto-restores a wallet on launch (skipping onboarding).
+#
+# Navigation: Dashboard -> Tap account-card -> Settings screen
+#
+# Tags: preseed, settings
+#
+# Prerequisites:
+#   - App built with `eas build --profile e2e-preseed`
+#   - BUILD_TYPE=standalone (no Metro connection needed)
+
+appId: ${MAESTRO_APP_ID}
+tags:
+  - preseed
+  - settings
+env:
+  BUILD_TYPE: standalone
+---
+# Launch app (pre-seeded wallet will be auto-restored)
+- launchApp
+
+# === DASHBOARD READY CHECK ===
+# Wait for dashboard to load with wallet
+- extendedWaitUntil:
+    visible:
+      id: "account-card"
+    timeout: 30000
+
+# Wait for wallet to sync - balance appears when sync completes
+- extendedWaitUntil:
+    visible:
+      id: "account-card-balance"
+    timeout: 60000
+
+# Take screenshot of synced dashboard
+- takeScreenshot: screenshots/preseed-dashboard-synced
+
+# === NAVIGATE TO SETTINGS ===
+# Tap on the account card (wallet avatar) in the header to open settings
+- tapOn:
+    id: "account-card"
+
+# Wait for settings screen to load
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "settings-wallet-management"
+    timeout: 10000
+
+# Verify settings elements are visible
+- assertVisible:
+    id: "settings-theme"
+
+- assertVisible:
+    id: "settings-security"
+
+# Take screenshot of settings
+- takeScreenshot: screenshots/preseed-settings

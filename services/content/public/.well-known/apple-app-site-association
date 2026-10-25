@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["APPLE_TEAM_ID.uk.pxkq.pnyx", "APPLE_TEAM_ID.uk.pxkq.pnyx.dev"],
+        "components": [{ "/": "/*", "comment": "universal links for all paths" }]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["APPLE_TEAM_ID.uk.pxkq.pnyx", "APPLE_TEAM_ID.uk.pxkq.pnyx.dev"]
+  }
+}

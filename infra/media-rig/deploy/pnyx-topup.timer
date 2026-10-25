@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Pnyx corpus top-up
+
+[Timer]
+OnCalendar=*-*-* 04:20:00
+# A Pi that was off at 04:20 still tops up when it comes back.
+Persistent=true
+RandomizedDelaySec=900
+
+[Install]
+WantedBy=timers.target

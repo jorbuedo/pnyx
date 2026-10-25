@@ -1,0 +1,43 @@
+{
+  // Type-checks the packages that no composite project covers.
+  //
+  // `tsconfig.json` builds a graph of project references, and every package in it emits to `dist`.
+  // The packages below are consumed straight from source (their `exports` point at `./src/*.ts`),
+  // so making them composite would mean adding a build step none of them needs. They were simply
+  // left out instead — which meant `bun run check` never saw `contract-client`, `chain-client`,
+  // the native module wrappers, `harness/`, `services/` or `infra/`. A required field added to
+  // `PnyxPrivateState` broke ten call sites without a single error (2026-08-02).
+  //
+  // So: one no-emit pass over the rest. Not composite, not referenced — `bun run check` runs it as
+  // a second command.
+  //
+  // `**/*.test.ts` is excluded to match every other package's convention. Those test files are
+  // covered by `tsconfig.tests.json`, which `bun run check` runs as a third pass.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "types": ["node", "bun", "@cloudflare/workers-types"]
+  },
+  "include": [
+    "packages/blockstore-native/**/*.ts",
+    "packages/chain-client/**/*.ts",
+    "packages/contract-client/**/*.ts",
+    "packages/midnight-native/**/*.ts",
+    "packages/model-native/**/*.ts",
+    "packages/passkey-native/**/*.ts",
+    "packages/ur/**/*.ts",
+    "harness/**/*.ts",
+    "services/content/**/*.ts",
+    "services/landing/**/*.ts",
+    "infra/**/*.ts",
+    "scripts/**/*.ts"
+  ],
+  // ⚠️ `infra/media-rig/pipeline` is excluded, and the number is the point: **36 errors in 8 files**
+  // when it was imported on 2026-10-15. It was written standalone under bun's defaults, so it has
+  // not met `noUncheckedIndexedAccess` or `noImplicitAny`, and 4 of the 36 are its `vendor/`
+  // copy of `packages/crypto/hashing.ts` importing @noble v1 subpaths that v2 does not have.
+  // Excluded rather than fixed because it is the live crawl and typing it is a change to running
+  // code, not an import. Tracked in `docs/FOLLOW_UPS.md`; lower the number, never raise it.
+  "exclude": ["**/node_modules", "**/dist", "**/*.test.ts", "infra/media-rig/pipeline/**"]
+}

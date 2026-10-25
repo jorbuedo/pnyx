@@ -1,0 +1,44 @@
+[Unit]
+Description=Midnight fee sponsor router (one tunnel, one token, a wallet per network)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=sponsor
+Group=sponsor
+WorkingDirectory=/var/lib/sponsor
+# Only the shared file: the router holds no wallet, so nothing per-network belongs to it beyond the
+# routing table, which is SPONSOR_NETWORKS in that same file.
+EnvironmentFile=/etc/sponsor/sponsor.env
+EnvironmentFile=/etc/sponsor/sponsor.router.env
+ExecStart=/usr/local/bin/bun /opt/sponsor/services/content/src/sponsor-router.ts
+
+Restart=always
+RestartSec=5
+
+# ⚠️ **No `After=` on the wallets, deliberately.** The router answers 502/503 with the reason for a
+# wallet that is not up yet, which is more useful during a 40-minute cold sync than a front door that
+# refuses connections. Ordering it after three wallets would make the tunnel dark for the whole sync.
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+# It writes nothing. Listed so a future change has to justify itself rather than inherit access.
+ReadOnlyPaths=/var/lib/sponsor
+Environment=HOME=/var/lib/sponsor
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sponsor-router
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,168 @@
+// proposal.compact — one deploy per proposal.
+//
+// Split out of `circle.compact` (`docs/BOUNDED_STATE_ARCHITECTURE.md` §10), which had **seven**
+// growing structures, two of them growing per *vote*, for ever, with no compaction: `actionNullifiers`
+// and `voteCommits`. One circle with 1,000 members and 100 proposals is ~200,000 entries — past the
+// readability wall, inside a single circle, from ordinary use. The unit of growth has to be the
+// **member**, never the action, so everything that grows per vote lives here, in a contract whose whole
+// lifetime is one proposal.
+//
+// **A proposal is a deploy, not a call.** The address is `SHA-256(tagged_serialize(ContractDeploy
+// {initial_state, nonce}))` with `nonce = persistentHash(["pnyx:proposal", circleId, content])`, so
+// the id *is* the content commitment: two authors never conflict, there is no counter and no index, and
+// **`createProposal` stops existing as an entry point**. Nothing about a proposal is a circle write.
+//
+// **The electorate is a snapshot.** `membersRoot` is sealed at creation, so a ban afterwards does not
+// disenfranchise and a join afterwards does not enfranchise. Decided deliberately — proposals are
+// short-lived and bans are rare — against a live electorate via `kernel.claimContractCall`, which is
+// genuinely available on our toolchain but costs an entry point on each side, two proofs per vote, and a
+// hand-assembled two-call transaction we have never run (§10).
+//
+// **The snapshot needs no trusted source.** A voter needs the member *digests* as of the sealed root,
+// and reconstructing the tree and comparing against that root **is** the verification — so the digests
+// may come from the content plane, a peer or a local cache, and a forged snapshot simply fails the
+// check. What makes the electorate itself checkable is the circle's permanent root history: a client
+// confirms this sealed root is a genuine historic root of the circle rather than a creator's tree of
+// sock puppets.
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+/// The circle this proposal belongs to. Sealed, and part of the address — it is what the address
+/// *means* rather than something a caller asserts.
+export sealed ledger circleId: Bytes<32>;
+
+/// The circle's members root as of creation: the electorate, frozen.
+///
+/// A plain `Field` rather than a `HistoricMerkleTree`, because there is nothing to insert here — a
+/// voter proves a path against this one root. `checkRoot` is not available and not wanted: accepting
+/// historic roots is exactly the window a snapshot exists to close.
+export sealed ledger membersRoot: Field;
+
+/// Commitment to the off-chain body. The proposal's identity — it is folded into the deploy nonce, so
+/// this value *is* what makes the address unique.
+export sealed ledger content: Bytes<32>;
+
+/// The author's persona. Disclosed deliberately: it is the circle pseudonym, and a moderator has to be
+/// able to name what they ban. Unlinkable to `C`, and unlinkable to this persona's votes, because
+/// `personaCommitment` and the action nullifier are one-way from the same secret under different tags.
+export sealed ledger author: Bytes<32>;
+
+/// How many options this ballot carries. Sealed and public, so a reader knows the valid range without
+/// consulting `tallies`.
+export sealed ledger optionCount: Uint<8>;
+
+/// `persistentHash(["pnyx:an", circleId, content])` — what this proposal's vote nullifiers are
+/// domain-separated by, computed once in the constructor.
+///
+/// Sealed rather than derived per call, and that is a measured choice: folding `circleId` and `content`
+/// in-circuit would need a `Vector<4>` hash, and arity 4 costs 5,691 rows against arity 3's 99 (§10).
+/// Precomputing it here makes the nullifier an arity-**2** hash. A constructor is not proven, so this
+/// costs nothing; and being sealed, it cannot disagree with the address.
+export sealed ledger voteDomain: Bytes<32>;
+
+/// `option -> count`. Seeded `0..optionCount-1` by the constructor, so a lookup in `revealVote` always
+/// succeeds and needs no `member()` guard or branch.
+///
+/// A map rather than a `Vector<MAX, Uint<64>>`: Compact has no dynamic indexing, so an array would pay
+/// a comparison chain per reveal to reach the right slot, and would freeze a maximum into every proof.
+/// Bounded by `optionCount`, which we choose — not by usage.
+export ledger tallies: Map<Uint<8>, Uint<64>>;
+
+/// One vote per persona, as action nullifiers. Bounded by **turnout**, so at most one entry per member
+/// of the sealed electorate — which is the whole point of the split.
+///
+/// ⚠️ Never deleted, unlike `commits`: this is what stops a persona voting a second time after their
+/// commitment has been opened and removed.
+export ledger voted: Set<Bytes<32>>;
+
+/// Sealed ballots, `an -> commitment`, **deleted on reveal**. So the structure that carries a ballot
+/// shrinks back to empty once counting is done, and only the turnout-bounded set remains.
+export ledger commits: Map<Bytes<32>, Bytes<32>>;
+
+witness personaSk(): Bytes<32>;
+witness memberPath(leaf: Bytes<32>): MerkleTreePath<20, Bytes<32>>;
+witness ballotOption(): Uint<8>;
+witness ballotRand(): Bytes<32>;
+
+/// Must match `circle.compact`'s derivation byte for byte — a member's leaf is the same value in both
+/// contracts, and a path proved here is against the circle's own tree.
+circuit personaCommitment(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "pnyx:pc"), sk]);
+}
+
+/// One vote per persona per proposal, without ever naming the persona. Arity 2, because `voteDomain`
+/// already carries the tag, the circle and the proposal.
+circuit actionNullifier(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([voteDomain, sk]);
+}
+
+/// Prove membership of the **sealed** electorate. A direct root comparison, not `checkRoot`: there is
+/// one root here for ever, and that is the property.
+circuit requireElector(leaf: Bytes<32>): [] {
+  assert(merkleTreePathRoot<20, Bytes<32>>(memberPath(leaf)).field == membersRoot, "not in the electorate");
+}
+
+constructor(
+  circle: Bytes<32>,
+  root: Field,
+  body: Bytes<32>,
+  proposer: Bytes<32>,
+  options: Uint<8>,
+) {
+  circleId = disclose(circle);
+  membersRoot = disclose(root);
+  content = disclose(body);
+  author = disclose(proposer);
+  const n = disclose(options);
+  assert(n >= 2, "a ballot needs at least two options");
+  // 8 is a *seeding* bound only, and a constructor is not a circuit, so the loop below costs nothing at
+  // proving time. It is not the `Vector<MAX>` a tally array would have needed, which would pay a
+  // comparison chain on every reveal because Compact has no dynamic indexing.
+  assert(n <= 8, "too many options");
+  optionCount = n;
+  voteDomain = persistentHash<Vector<3, Bytes<32>>>([pad(32, "pnyx:an"), disclose(circle), disclose(body)]);
+  // Seeded so every valid option is present at zero — a reader can tell "no votes" from "no such
+  // option" without consulting `optionCount`, and `revealVote` needs no membership guard on the map.
+  for (const i of 0..8) {
+    if ((i as Uint<8>) < n) { tallies.insert(i as Uint<8>, 0); }
+  }
+}
+
+/// Commit a sealed ballot. **Discloses only the action nullifier** — never the persona. Disclosing the
+/// persona here would pair with `revealVote`'s `an -> option` and expose `persona -> vote`, destroying
+/// the secret ballot after the commitment scheme had protected it.
+///
+/// Two circuits rather than one merged pair, unlike `circle.join`: commit and reveal must be two
+/// *transactions* for the ballot to be secret at all.
+export circuit castVote(): [] {
+  const sk = personaSk();
+  requireElector(personaCommitment(sk));
+  const an = actionNullifier(sk);
+  assert(!voted.member(disclose(an)), "already voted");
+  voted.insert(disclose(an));
+  commits.insert(disclose(an), disclose(persistentCommit<Uint<8>>(ballotOption(), ballotRand())));
+}
+
+/// Open a sealed ballot and count it.
+///
+/// No membership check: the nullifier in `commits` already proves this persona voted while an elector,
+/// and a vote should not be voided by a later departure.
+///
+/// The option is **disclosed** and the tally at that index incremented — no in-circuit branching over
+/// options, which is what a `Vector<MAX>` would have forced. Disclosing it costs no privacy: `an ->
+/// option` is public at reveal by construction, and `persona -> an` is what stays hidden.
+export circuit revealVote(): [] {
+  const sk = personaSk();
+  const an = actionNullifier(sk);
+  assert(commits.member(disclose(an)), "no committed vote");
+  const option = ballotOption();
+  assert(commits.lookup(disclose(an)) == persistentCommit<Uint<8>>(option, ballotRand()),
+    "ballot does not open");
+  const chosen = disclose(option);
+  // Range-checked against the sealed count rather than trusted: a commitment can be opened to any
+  // `Uint<8>`, and an out-of-range option would insert a tally row the constructor never seeded.
+  assert(chosen < optionCount, "no such option");
+  commits.remove(disclose(an));
+  tallies.insert(chosen, (tallies.lookup(chosen) + 1) as Uint<64>);
+}

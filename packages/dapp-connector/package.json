@@ -1,0 +1,31 @@
+{
+  "name": "@pnyx/dapp-connector",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "clean": "rm -rf dist node_modules/.tmp"
+  },
+  "dependencies": {
+    "@evolution-sdk/plan": "*",
+    "@evolution-sdk/review": "*",
+    "@midnight-ntwrk/dapp-connector-api": "4.1.0-canary.20260819082604-3b622cb",
+    "@pnyx/cardano-core": "workspace:*",
+    "effect": "3.21.4"
+  },
+  "devDependencies": {
+    "@effect/vitest": "0.27.0",
+    "@types/node": "25.0.9",
+    "typescript": "~6.0.3",
+    "vitest": "4.1.10"
+  }
+}

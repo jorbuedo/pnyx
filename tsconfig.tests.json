@@ -1,0 +1,40 @@
+{
+  // Type-checks every `*.test.ts` under packages/, services/, harness/ and infra/.
+  //
+  // Each package's own tsconfig excludes its tests, because those projects emit and a test file
+  // has no business in `dist`. The consequence was that no project checked them at all: a
+  // signature change inside a test file was invisible until it failed at runtime
+  // (`personaSkFromForumRoot` went bigint → Uint8Array and `persona.test.ts` kept passing `1n`).
+  // `app` never had the gap — it is `noEmit`, so its tests are in its own project.
+  //
+  // One no-emit pass over all of them, run by `bun run check` after the other two. The options
+  // describe the environment the tests actually run in, which is not any single package's:
+  //
+  // - `Bundler` resolution + `ESNext` — vitest resolves like a bundler, so extensionless
+  //   relative imports are correct here even for packages that build under NodeNext.
+  // - `types: node` — vitest runs on Node; without it every `Buffer` in a test is an error.
+  //   `@cloudflare/workers-types` is for services/, whose tests name Workers types directly.
+  //   Deliberately not `bun`: it supplies a third, conflicting `fetch` and breaks fetch mocks.
+  // - The base `lib` (with DOM) stays — source files pulled in by these tests use `window`,
+  //   `document` and IndexedDB.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "types": ["node", "@cloudflare/workers-types"]
+  },
+  "include": [
+    "packages/*/**/*.test.ts",
+    "packages/*/**/*.test.tsx",
+    "services/*/**/*.test.ts",
+    "harness/**/*.test.ts",
+    "infra/**/*.test.ts"
+  ],
+  "exclude": ["**/node_modules", "**/dist", "packages/cardano-effect/**"]
+}

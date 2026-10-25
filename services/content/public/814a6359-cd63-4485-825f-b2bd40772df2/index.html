@@ -1,0 +1,1622 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <title>
+      Community on Midnight — problem, solution, contract intents (WIP draft)
+    </title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #fbfaf9;
+        --bg-raised: #ffffff;
+        --bg-sunken: #f2f0ee;
+        --text: #1c1a19;
+        --text-muted: #6b6560;
+        --text-faint: #918a84;
+        --rule: #e3dfdb;
+        --rule-strong: #cfc9c3;
+        --accent: #6b4ec9;
+        --accent-soft: #efeaff;
+        --warn-bg: #fdf6e3;
+        --warn-rule: #e8d8a8;
+        --warn-text: #6b5518;
+        --ok: #2f7d4f;
+        --ok-bg: #e6f3ea;
+        --part: #9a6b12;
+        --part-bg: #fbf1dc;
+        --todo: #6b6560;
+        --todo-bg: #eceae7;
+        --mono:
+          ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+        --sans:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #16151a;
+          --bg-raised: #1e1d24;
+          --bg-sunken: #121116;
+          --text: #e9e6e3;
+          --text-muted: #a29c98;
+          --text-faint: #7a746f;
+          --rule: #2c2a33;
+          --rule-strong: #3d3a45;
+          --accent: #a894f5;
+          --accent-soft: #251f3d;
+          --warn-bg: #2a2413;
+          --warn-rule: #4d4225;
+          --warn-text: #e3ce93;
+          --ok: #7cc79b;
+          --ok-bg: #1a2b21;
+          --part: #d9ab5c;
+          --part-bg: #2c2416;
+          --todo: #9b948e;
+          --todo-bg: #26242a;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 16.5px;
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 24px 96px;
+      }
+
+      /* ── WIP banner ───────────────────────────────── */
+      .wip {
+        background: var(--warn-bg);
+        border-bottom: 1px solid var(--warn-rule);
+        color: var(--warn-text);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .wip .wip-inner {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 14px 24px;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .wip strong {
+        font-weight: 650;
+      }
+      .wip-badge {
+        flex: none;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        border: 1px solid var(--warn-rule);
+        border-radius: 4px;
+        padding: 3px 7px;
+        margin-top: 1px;
+      }
+
+      /* ── Masthead ─────────────────────────────────── */
+      header.masthead {
+        padding: 64px 0 40px;
+        border-bottom: 1px solid var(--rule);
+        margin-bottom: 48px;
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin: 0 0 18px;
+      }
+      h1 {
+        font-size: clamp(30px, 5vw, 46px);
+        line-height: 1.12;
+        letter-spacing: -0.022em;
+        font-weight: 680;
+        margin: 0 0 20px;
+        max-width: 20ch;
+      }
+      .standfirst {
+        font-size: clamp(17px, 2.2vw, 19.5px);
+        line-height: 1.55;
+        color: var(--text-muted);
+        max-width: 62ch;
+        margin: 0 0 28px;
+      }
+      .meta {
+        font-size: 13.5px;
+        color: var(--text-faint);
+        max-width: 78ch;
+      }
+      .meta code {
+        font-size: 12.5px;
+      }
+
+      /* ── Layout with TOC ──────────────────────────── */
+      .layout {
+        display: block;
+      }
+      @media (min-width: 1040px) {
+        .layout {
+          display: grid;
+          grid-template-columns: 1fr 216px;
+          gap: 56px;
+          align-items: start;
+        }
+        nav.toc {
+          position: sticky;
+          top: 28px;
+          order: 2;
+          font-size: 13.5px;
+          border-left: 1px solid var(--rule);
+          padding-left: 20px;
+        }
+      }
+      nav.toc {
+        margin: 0 0 44px;
+      }
+      nav.toc p {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-faint);
+        margin: 0 0 12px;
+      }
+      nav.toc ol {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      nav.toc li {
+        margin: 0 0 9px;
+      }
+      nav.toc a {
+        color: var(--text-muted);
+        text-decoration: none;
+        display: block;
+        line-height: 1.35;
+      }
+      nav.toc a:hover {
+        color: var(--accent);
+      }
+      nav.toc .num {
+        font-family: var(--mono);
+        font-size: 11.5px;
+        color: var(--text-faint);
+        margin-right: 7px;
+      }
+      main {
+        min-width: 0;
+        order: 1;
+      }
+
+      /* ── Typography ───────────────────────────────── */
+      h2 {
+        font-size: clamp(23px, 3.2vw, 29px);
+        line-height: 1.2;
+        letter-spacing: -0.017em;
+        font-weight: 660;
+        margin: 68px 0 20px;
+        padding-top: 8px;
+        scroll-margin-top: 20px;
+      }
+      h2 .num {
+        font-family: var(--mono);
+        font-size: 0.62em;
+        color: var(--accent);
+        margin-right: 12px;
+        font-weight: 500;
+      }
+      h3 {
+        font-size: 18.5px;
+        line-height: 1.3;
+        font-weight: 640;
+        letter-spacing: -0.008em;
+        margin: 42px 0 14px;
+        scroll-margin-top: 20px;
+      }
+      h4 {
+        font-size: 15px;
+        font-weight: 650;
+        margin: 30px 0 10px;
+        color: var(--text-muted);
+      }
+      p {
+        margin: 0 0 18px;
+        max-width: 74ch;
+      }
+      main ul,
+      main ol {
+        max-width: 74ch;
+        padding-left: 22px;
+        margin: 0 0 20px;
+      }
+      main li {
+        margin: 0 0 9px;
+      }
+      strong {
+        font-weight: 640;
+      }
+      a {
+        color: var(--accent);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 2px;
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.87em;
+        background: var(--bg-sunken);
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        padding: 1px 5px;
+        word-break: break-word;
+      }
+      pre {
+        font-family: var(--mono);
+        font-size: 12.5px;
+        line-height: 1.55;
+        background: var(--bg-sunken);
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        padding: 18px 20px;
+        overflow-x: auto;
+        margin: 0 0 24px;
+      }
+      pre code {
+        background: none;
+        border: 0;
+        padding: 0;
+        font-size: inherit;
+      }
+
+      blockquote {
+        margin: 0 0 24px;
+        padding: 16px 20px;
+        background: var(--accent-soft);
+        border-left: 3px solid var(--accent);
+        border-radius: 0 8px 8px 0;
+        font-size: 15px;
+      }
+      blockquote p:last-child {
+        margin-bottom: 0;
+      }
+      blockquote p {
+        max-width: 68ch;
+      }
+
+      .callout {
+        margin: 0 0 24px;
+        padding: 16px 20px;
+        background: var(--bg-raised);
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        font-size: 15px;
+      }
+      .callout p:last-child {
+        margin-bottom: 0;
+      }
+
+      /* ── Tables ───────────────────────────────────── */
+      .table-scroll {
+        overflow-x: auto;
+        margin: 0 0 26px;
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        background: var(--bg-raised);
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 11px 14px;
+        border-bottom: 1px solid var(--rule);
+        vertical-align: top;
+      }
+      th {
+        font-weight: 640;
+        font-size: 12.5px;
+        letter-spacing: 0.02em;
+        color: var(--text-muted);
+        background: var(--bg-sunken);
+        white-space: nowrap;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      td code {
+        font-size: 12.4px;
+      }
+      .num-col {
+        font-family: var(--mono);
+        white-space: nowrap;
+      }
+
+      /* ── Status pills ─────────────────────────────── */
+      .pill {
+        display: inline-block;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border-radius: 4px;
+        white-space: nowrap;
+        font-weight: 500;
+      }
+      .pill-ok {
+        background: var(--ok-bg);
+        color: var(--ok);
+      }
+      .pill-part {
+        background: var(--part-bg);
+        color: var(--part);
+      }
+      .pill-todo {
+        background: var(--todo-bg);
+        color: var(--todo);
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        font-size: 13.5px;
+        color: var(--text-muted);
+        margin: 0 0 26px;
+        padding: 14px 16px;
+        background: var(--bg-raised);
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+      }
+      .legend span {
+        display: flex;
+        gap: 7px;
+        align-items: center;
+      }
+
+      hr {
+        border: 0;
+        border-top: 1px solid var(--rule);
+        margin: 56px 0;
+      }
+
+      footer {
+        margin-top: 72px;
+        padding-top: 26px;
+        border-top: 1px solid var(--rule);
+        font-size: 13.5px;
+        color: var(--text-faint);
+      }
+      footer p {
+        max-width: 74ch;
+      }
+
+      @media (max-width: 640px) {
+        body {
+          font-size: 16px;
+        }
+        .wrap {
+          padding: 0 18px 64px;
+        }
+        .wip .wip-inner {
+          padding: 12px 18px;
+        }
+        header.masthead {
+          padding: 40px 0 30px;
+          margin-bottom: 34px;
+        }
+        th,
+        td {
+          padding: 9px 11px;
+          font-size: 13.2px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wip">
+      <div class="wip-inner">
+        <span class="wip-badge">WIP draft</span>
+        <div>
+          <strong
+            >Working draft — an idea document, not a specification, and not a
+            description of a finished product.</strong
+          >
+          It compiles current thinking and in-progress engineering into one
+          narrative so it can be discussed. Designs here are provisional and
+          expected to change; status markers describe a moving development
+          state, not a shipped or audited system.
+        </div>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <header class="masthead">
+        <p class="eyebrow">Pnyx · Internal working draft · 28 July 2026</p>
+        <h1>Community on Midnight</h1>
+        <p class="standfirst">
+          The problem, the solution, and every smart-contract intent — the ones
+          already compiled, measured and landing on-chain, and the ones still to
+          be written.
+        </p>
+        <p class="meta">
+          Compiled from the <code>midnight-research</code> corpus (spec +
+          research rounds) and the <code>midnight-pnyx</code> implementation:
+          the forum spec, the identity SOTA scan, the Passport harvest map,
+          <code>pnyx.compact</code> and its spike results, and the mobile-shell,
+          on-device-proving and ship-readiness notes.
+        </p>
+      </header>
+
+      <div class="layout">
+        <nav class="toc">
+          <p>Contents</p>
+          <ol>
+            <li>
+              <a href="#s1"><span class="num">1</span>The problem</a>
+            </li>
+            <li>
+              <a href="#s2"><span class="num">2</span>Shape of the solution</a>
+            </li>
+            <li>
+              <a href="#s3"
+                ><span class="num">3</span>Identity — the “passport”</a
+              >
+            </li>
+            <li>
+              <a href="#s4"><span class="num">4</span>Smart-contract intents</a>
+            </li>
+            <li>
+              <a href="#s5"><span class="num">5</span>Where it stands</a>
+            </li>
+            <li>
+              <a href="#s6"><span class="num">6</span>Delivery order</a>
+            </li>
+            <li>
+              <a href="#s7"><span class="num">7</span>Why build it</a>
+            </li>
+          </ol>
+        </nav>
+
+        <main>
+          <h2 id="s1"><span class="num">1</span>The problem</h2>
+
+          <p>
+            Governance communities in the Cardano/Midnight ecosystem need
+            somewhere to talk that has three properties no existing forum has at
+            once:
+          </p>
+
+          <ol>
+            <li>
+              <strong>The wallet is the identity.</strong> No email, no OAuth,
+              no account server. Portable and seed-recoverable.
+            </li>
+            <li>
+              <strong
+                >Entry can be gated on a fact about you without revealing
+                you.</strong
+              >
+              “I hold ≥ X”, “I’m a registered DRep”, “I work at Org Y”, “I’m a
+              unique human”, “I’m over 18” — proved, not asserted, and not
+              doxxing.
+            </li>
+            <li>
+              <strong
+                >The same person can be disclosed in one community and
+                anonymous-but-verified in another, and those two contexts are
+                mutually unlinkable — including by the operator of the
+                service.</strong
+              >
+            </li>
+          </ol>
+
+          <p>
+            Point 3 is the load-bearing requirement. Everything else in the
+            design exists to satisfy it.
+          </p>
+
+          <h3>Why this needs a chain</h3>
+
+          <p>
+            If a server enforces membership, uniqueness and bans, then the
+            server <em>knows</em> the mapping and privacy is a promise, not a
+            property. If a single Midnight address signs every action,
+            everything is linked to one public key and requirement 3 fails
+            outright. What makes the claim honest is that the trust-critical
+            state — who is a member, who has already joined, who has already
+            voted, who is banned — lives in a public contract that anyone can
+            verify, while the secrets that link those facts to a person never
+            leave the device.
+          </p>
+
+          <div class="callout">
+            <p>
+              <strong>What Community deliberately does NOT claim.</strong>
+              Midnight buys
+              <em
+                >verifiable membership, uniqueness, gating, tallies and
+                moderation</em
+              >. It does not buy message confidentiality: post bodies live
+              off-chain in our own store, and the operator can read them.
+              Confidential messaging is a separate app-layer problem (X25519
+              sealed envelopes, §4.5) and is never marketed as “Midnight
+              privacy”.
+            </p>
+          </div>
+
+          <h2 id="s2"><span class="num">2</span>The shape of the solution</h2>
+
+          <pre><code>┌──────────────────────────────┐  ┌────────────────────────────┐  ┌───────────────────────────┐
+│ Device (the app)             │  │ Midnight — pnyx.compact   │  │ Content plane (self-host) │
+│                              │  │                            │  │                           │
+│ seed → forumRoot             │  │ member tree (Merkle)       │  │ communities, channels,    │
+│  ├ per-community personas    │  │ join + action nullifiers   │  │ posts, poll bodies        │
+│  ├ credential secrets        │─▶│ gate policy per circle     │◀─│ realtime, push            │
+│  └ proves circuits natively  │  │ proposals + tallies        │  │ mirrors public chain state│
+│    (Rust, on-device)         │  │ bans                       │  │ never enforces membership │
+└──────────────────────────────┘  └────────────────────────────┘  └───────────────────────────┘
+                                     fees sponsored (DUST) — users hold no funds</code></pre>
+
+          <p>Three rules keep the story coherent:</p>
+
+          <ul>
+            <li>
+              <strong
+                >The chain enforces possession and uniqueness; issuers vouch for
+                meaning.</strong
+              >
+              A circuit can prove you hold a credential secret whose commitment
+              is in the tree. It cannot know that “DRep” means anything — a
+              registrar attests that, once, at registration.
+            </li>
+            <li>
+              <strong>The content plane is a cache, never an enforcer.</strong>
+              It mirrors public contract state so the UI is fast; any client can
+              re-verify against the chain.
+            </li>
+            <li>
+              <strong>Witnesses never leave the device.</strong> Personas, gate
+              secrets and ballots are private inputs to circuits proved on the
+              phone. The backend only pays the DUST fee.
+            </li>
+          </ul>
+
+          <h3>Product vocabulary</h3>
+
+          <p>
+            The UI never says “circle”, “persona” or “nullifier”. Circles render
+            as <strong>communities</strong>, threads as
+            <strong>channels</strong>, proposals as <strong>polls</strong>,
+            personas as a <strong>per-community display name</strong>. This
+            document uses the internal words because the contract does.
+          </p>
+
+          <h2 id="s3"><span class="num">3</span>Identity — the “passport”</h2>
+
+          <blockquote>
+            <p>
+              <strong>Name collision, worth stating once.</strong>
+              <em>Midnight Passport</em> (<code>midnightntwrk/passport</code>)
+              is IOG’s own identity project — Apache-2.0, pre-product, ~Oct-2026
+              MVP target. It is <strong>not a dependency</strong> (no releases,
+              no tags, real code on branches) — but it is largely
+              <em>a written specification</em>, and we intend to
+              <strong>conform to it</strong> where it fits rather than merely
+              borrow from it. See §4.7. “Passport” below means
+              <em>our</em> identity surface — the app’s
+              <strong>Id tab</strong> — unless it says Midnight Passport.
+            </p>
+          </blockquote>
+
+          <h3>3.1 Derivation tree</h3>
+
+          <pre><code>seed  (enclave-held, biometric-gated, passkey-PRF recoverable)
+ └─ forumRoot = HKDF(seed, "pnyx:root:v1")
+     ├─ persona   sk_C  = HKDF(forumRoot, "pnyx:persona:v1:" ‖ circleId)   → one per community
+     ├─ credential secret = HKDF(forumRoot, "pnyx:cred:v1:" ‖ claimTag)    → one per claim
+     └─ encryption key (X25519)                                            → sealed DMs</code></pre>
+
+          <p>
+            Every persona and every credential secret is derived, so a reinstall
+            re-derives the whole identity; Merkle paths are re-fetchable from
+            public state. This is what makes an identity built on
+            non-recoverable contract private state actually recoverable.
+          </p>
+
+          <h3>
+            3.2 Two nullifier families — the trick that resolves Sybil vs.
+            unlinkability
+          </h3>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nullifier</th>
+                  <th>Preimage</th>
+                  <th>Enforces</th>
+                  <th>Unlinkable across</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Join</strong> <code>JN_C</code></td>
+                  <td><code>H("pnyx:jn:v1", circleId, gateSecret)</code></td>
+                  <td>
+                    one scarce unit (credential / invite / human) →
+                    <strong>one persona per community</strong>
+                  </td>
+                  <td>communities</td>
+                </tr>
+                <tr>
+                  <td><strong>Action</strong> <code>AN_{a}</code></td>
+                  <td><code>H("pnyx:an:v1", actionId, sk_C)</code></td>
+                  <td>one persona → <strong>one vote per poll</strong></td>
+                  <td>polls and communities</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            The join nullifier must bind to whatever the gate makes
+            <strong>scarce</strong>. A secret the user can mint for free bounds
+            nothing — so open communities are explicitly weak (personas there
+            are cheap; a ban only costs the banned party another join fee) and
+            we say so in the product. Strong trust is a gated community, by
+            definition.
+          </p>
+
+          <p>
+            <strong>Ban the nullifier, not the person.</strong> Moderation
+            inserts <code>JN_C</code> into a banned set: the same
+            credential-holder cannot re-enter under a fresh persona, and nobody
+            learns who they are. Ban-resistance
+            <em>without</em> de-anonymisation — a feature of the model, not a
+            compromise.
+          </p>
+
+          <h3>3.3 Disclosure levels, chosen per community at join time</h3>
+
+          <ol>
+            <li>
+              <strong>Public</strong> — persona linked to the
+              <code>mn_addr</code> profile (opt-in doxxed).
+            </li>
+            <li>
+              <strong>Verified-anonymous</strong> — persona plus ZK-verified
+              claims, no identity linkage.
+            </li>
+            <li><strong>Plain-anonymous</strong> — persona only.</li>
+          </ol>
+
+          <h2 id="s4"><span class="num">4</span>Smart-contract intents</h2>
+
+          <p>
+            One contract per forum (<code>pnyx.compact</code>, language 0.23 /
+            toolchain 0.31.1). Everything below is stated as an intent: what it
+            must prove, what it reveals, and where it stands.
+          </p>
+
+          <div class="legend">
+            <span
+              ><span class="pill pill-ok">live</span> compiled, measured,
+              executed as a real transaction</span
+            >
+            <span
+              ><span class="pill pill-part">partial</span> exists, with a known
+              hole listed in §4.6</span
+            >
+            <span
+              ><span class="pill pill-todo">to write</span> not yet built</span
+            >
+          </div>
+
+          <h3>4.1 Membership — creating and joining communities</h3>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Intent</th>
+                  <th>Proves</th>
+                  <th>Reveals</th>
+                  <th>K</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>createCircle(gateCommitment)</code></td>
+                  <td>
+                    nothing private; registers a community and its gate policy
+                  </td>
+                  <td>circleId, gate commitment</td>
+                  <td class="num-col">9</td>
+                  <td><span class="pill pill-ok">live</span></td>
+                </tr>
+                <tr>
+                  <td><code>joinOpenCircle(circleId)</code></td>
+                  <td>
+                    knowledge of a persona secret; not already joined; not
+                    banned
+                  </td>
+                  <td>join nullifier, member leaf</td>
+                  <td class="num-col">14</td>
+                  <td>
+                    <span class="pill pill-ok">live</span> device-proven
+                    end-to-end
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>joinCircle(circleId)</code> — invite gate</td>
+                  <td>
+                    knowledge of the invite secret behind the circle’s gate
+                    commitment; not already joined; not banned
+                  </td>
+                  <td>join nullifier, member leaf</td>
+                  <td class="num-col">15</td>
+                  <td><span class="pill pill-ok">live</span> server-proved</td>
+                </tr>
+                <tr>
+                  <td>
+                    <code>joinCredentialedCircle(circleId, claimTag)</code>
+                  </td>
+                  <td>
+                    Merkle-inclusion of an attested credential commitment +
+                    nullifier bound to the <strong>credential</strong> secret
+                  </td>
+                  <td>join nullifier, member leaf, the public claimTag</td>
+                  <td class="num-col">~13–15 est.</td>
+                  <td>
+                    <span class="pill pill-todo">to write</span> the real
+                    gated-community story
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>joinByDeposit(circleId)</code></td>
+                  <td>
+                    a deposit / soulbound membership token received into the
+                    circle vault
+                  </td>
+                  <td>join nullifier, member leaf</td>
+                  <td class="num-col">est.</td>
+                  <td>
+                    <span class="pill pill-todo">to write</span> the only
+                    <em>trustless</em> holdings gate available today
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            The membership proof is the canonical Midnight pattern:
+            <code>HistoricMerkleTree</code> inclusion plus a domain-separated
+            nullifier. Historic roots are accepted, so concurrent joins do not
+            invalidate an in-flight proof — exactly the concurrency property a
+            live forum needs.
+          </p>
+
+          <div class="callout">
+            <p>
+              <strong
+                >Why <code>joinByDeposit</code> and not “prove you hold
+                X”:</strong
+              >
+              a Compact circuit today cannot read a user’s balance, cannot read
+              Cardano state, and cannot verify an external signature in-circuit.
+              Passive holdings proofs are therefore impossible on Midnight right
+              now. The workable trustless gate is deposit-into-a-vault; anything
+              about <em>another</em> chain needs a registrar (§4.4). This is a
+              dated platform constraint, and the design keeps it behind a
+              swappable seam.
+            </p>
+          </div>
+
+          <h3>4.2 Polls — proposals, voting, tallies</h3>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Intent</th>
+                  <th>Proves</th>
+                  <th>Reveals</th>
+                  <th>K</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <code>createProposal(circleId, contentCommitment)</code>
+                  </td>
+                  <td>membership of the community (Merkle path)</td>
+                  <td>proposalId, content commitment</td>
+                  <td class="num-col">14</td>
+                  <td><span class="pill pill-ok">live</span></td>
+                </tr>
+                <tr>
+                  <td><code>castVote(circleId, proposalId)</code></td>
+                  <td>
+                    membership + not already voted; commits a sealed ballot
+                  </td>
+                  <td>action nullifier, ballot commitment</td>
+                  <td class="num-col">15</td>
+                  <td><span class="pill pill-ok">live</span></td>
+                </tr>
+                <tr>
+                  <td><code>revealVote(proposalId)</code></td>
+                  <td>the sealed ballot opens to the value being counted</td>
+                  <td>the vote, incremented tally</td>
+                  <td class="num-col">13</td>
+                  <td><span class="pill pill-ok">live</span></td>
+                </tr>
+                <tr>
+                  <td><strong>per-proposal tallies</strong></td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td class="num-col">—</td>
+                  <td>
+                    <span class="pill pill-part">must fix</span> the current
+                    contract has two contract-global counters
+                    (<code>tallyYes</code>/<code>tallyNo</code>), not
+                    <code>Map&lt;proposalId, Counter&gt;</code>. Spike lineage.
+                  </td>
+                </tr>
+                <tr>
+                  <td>multi-option ballots</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td class="num-col">—</td>
+                  <td>
+                    <span class="pill pill-todo">to write</span> binary yes/no
+                    today
+                  </td>
+                </tr>
+                <tr>
+                  <td>homomorphic tallying</td>
+                  <td>
+                    Pedersen-committed tallies
+                    (<code>ecMulGenerator</code>/<code>ecAdd</code>) instead of
+                    commit/reveal
+                  </td>
+                  <td>—</td>
+                  <td class="num-col">—</td>
+                  <td>
+                    <span class="pill pill-todo">deferred</span> possible in
+                    stdlib, no official precedent
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Ballot secrecy v1 is <strong>commit/reveal</strong> — the pattern
+            from Midnight’s own Election contract. The poll body lives
+            off-chain; its commitment is anchored on-chain, so a tampering
+            operator is detectable.
+          </p>
+
+          <p>
+            <strong>Product knob:</strong> as specified every vote is on-chain
+            and costs DUST. Casual off-chain polls (persona-signed, uniqueness
+            enforced by the content plane) are cheap to add but lose the
+            trustless tally — a per-poll choice, not a global one.
+          </p>
+
+          <h3>4.3 Moderation</h3>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Intent</th>
+                  <th>Proves</th>
+                  <th>Reveals</th>
+                  <th>K</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>banJoinNullifier(jn)</code></td>
+                  <td>moderator membership (depth-10 moderator tree)</td>
+                  <td>the banned nullifier</td>
+                  <td class="num-col">13</td>
+                  <td><span class="pill pill-ok">live</span></td>
+                </tr>
+                <tr>
+                  <td><code>addModerator(commitment)</code></td>
+                  <td>—</td>
+                  <td>moderator commitment</td>
+                  <td class="num-col">13</td>
+                  <td>
+                    <span class="pill pill-part">ungated in the spike</span>
+                    anyone can add themselves. Needs a maintenance-authority- or
+                    governance-gated path before any real network.
+                  </td>
+                </tr>
+                <tr>
+                  <td>moderator-set per circle</td>
+                  <td>
+                    scope moderators to a community rather than one global tree
+                  </td>
+                  <td>—</td>
+                  <td class="num-col">—</td>
+                  <td><span class="pill pill-todo">to write</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>4.4 Credentials and selective disclosure</h3>
+
+          <p>
+            This is the layer that turns “a forum with anonymous accounts” into
+            “a forum where you can prove things about yourself without being
+            identified”. It is the <strong>largest remaining piece</strong>.
+          </p>
+
+          <pre><code>off-chain proof (signature / VC / on-device ZK)  ─┐
+                                                  ├─▶ registrar verifies MEANING
+user-computed commitment H(claimTag, credSecret) ─┘   └─▶ registerCredential → identityTree
+
+later, per gated community:
+  joinCredentialedCircle proves Merkle-inclusion of that leaf
+  + emits a nullifier bound to credSecret  ⇒ one credential = one persona per community</code></pre>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Intent</th>
+                  <th>Proves</th>
+                  <th>Reveals</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>registerCredential(claimTag, commitment)</code></td>
+                  <td>
+                    the caller is the registrar (knowledge-of-secret, “bboard
+                    owner” pattern — stdlib has
+                    <strong>no in-circuit signature verification</strong>)
+                  </td>
+                  <td>the commitment, the claim tag</td>
+                  <td><span class="pill pill-todo">to write</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <code>joinCredentialedCircle(circleId, claimTag)</code>
+                  </td>
+                  <td>
+                    possession of a credential matching the community’s required
+                    claim
+                  </td>
+                  <td>join nullifier, claim tag</td>
+                  <td><span class="pill pill-todo">to write</span></td>
+                </tr>
+                <tr>
+                  <td>attribute predicate proofs</td>
+                  <td>
+                    “attribute ≥ threshold” / “attribute ∈ set” over a
+                    credential, for in-app disclosure rather than joining
+                  </td>
+                  <td>the predicate result only</td>
+                  <td><span class="pill pill-todo">to write</span></td>
+                </tr>
+                <tr>
+                  <td>revocation / credential status</td>
+                  <td>a credential leaf is no longer valid</td>
+                  <td>—</td>
+                  <td>
+                    <span class="pill pill-todo">to write</span>
+                    <strong>conform to</strong> the Midnight VC
+                    <code>revocation-registry</code> +
+                    <code>credential-status</code> specs (§4.7), which ship
+                    prototype contracts
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4>Claims we want to support, and what each honestly costs</h4>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Claim</th>
+                  <th>Regime</th>
+                  <th>What the registrar learns</th>
+                  <th>Chain sees</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>“I’m a Cardano DRep”</td>
+                  <td>
+                    registrar + indexer (CIP-95 DRep key, CIP-8 signature,
+                    indexer confirms registration)
+                  </td>
+                  <td>DRep ID ↔ commitment, at time <em>T</em></td>
+                  <td>a nullifier</td>
+                </tr>
+                <tr>
+                  <td>“I hold ≥ X ADA”</td>
+                  <td>registrar + indexer (snapshot at <em>T</em>)</td>
+                  <td>Cardano address ↔ commitment</td>
+                  <td>a nullifier</td>
+                </tr>
+                <tr>
+                  <td>“I hold ≥ X on Midnight”</td>
+                  <td>
+                    <strong>trustless</strong> — deposit / soulbound membership
+                    token
+                  </td>
+                  <td>nothing</td>
+                  <td>a nullifier</td>
+                </tr>
+                <tr>
+                  <td>“I’m a unique human”</td>
+                  <td>
+                    on-device passport-ZK (Self / zkPassport / Rarimo);
+                    registrar checks the document nullifier is unseen
+                  </td>
+                  <td>a document nullifier, no PII</td>
+                  <td>a nullifier</td>
+                </tr>
+                <tr>
+                  <td>“I’m over 18”</td>
+                  <td>
+                    on-device ZK range proof (best) or an SD-JWT
+                    <code>age_over_18</code> boolean (pragmatic)
+                  </td>
+                  <td>on-device: nothing; SD-JWT: issuer linkage</td>
+                  <td>a nullifier</td>
+                </tr>
+                <tr>
+                  <td>“I work at Org Y”</td>
+                  <td>issuer-signed VC → registrar</td>
+                  <td>issuer identity ↔ commitment</td>
+                  <td>a nullifier</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout">
+            <p>
+              <strong>The honest trade-off, stated in-product:</strong> for
+              anything the chain cannot check itself, a registrar learns
+              <code>real-id ↔ commitment</code>
+              <strong>once, at registration</strong>. Post-registration
+              anonymity holds even against registrar <em>and</em> server
+              collusion — but that one linkage exists. When in-circuit signature
+              verification lands in Compact, the registrar step collapses into
+              the circuit and these become fully trustless; the design keeps it
+              behind that seam.
+            </p>
+          </div>
+
+          <p>
+            <strong>Cardano wallet posture:</strong> for Cardano-linked claims
+            the app is a <strong>connect-only CIP-30/95 client</strong> against
+            the user’s existing Cardano wallet — <code>getUsedAddresses</code>,
+            <code>getPubDRepKey</code>, <code>signData</code>. It never calls
+            <code>signTx</code>, <code>submitTx</code> or <code>getUtxos</code>,
+            so it cannot move funds and custodies no Cardano keys. Balance facts
+            come from a first-party-configured indexer, never from
+            wallet-reported balance.
+          </p>
+
+          <p>
+            <strong
+              >The decision gate that was open here is effectively settled by
+              conforming (§4.7).</strong
+            >
+            The Midnight VC spec’s <code>claim-representation.md</code> is
+            normative draft material that classifies every credential field as
+            <code>public</code> / <code>selectivelyDisclosed</code> /
+            <code>committedPrivate</code> / <code>predicateOnly</code> inside a
+            Compact-native <code>VC&lt;...&gt;</code> envelope, and positions
+            SD-JWT as an <em>export adapter</em> rather than the engine — which
+            is the direction we were already leaning. Adopting that taxonomy
+            means our <code>claimTag</code> + credential commitment become their
+            claim-commitment shape, and the four rows above get a written data
+            model instead of an invented one.
+          </p>
+
+          <h3>4.5 Identity registry and messaging</h3>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Intent</th>
+                  <th>What it is</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>&lt;handle&gt;.night</code> registry</td>
+                  <td>
+                    handle → persona / <code>mn_addr</code> binding with an
+                    ownership-proof gate; the first concrete element of the
+                    Id-tab body (today the tab is just <code>mn_addr</code> +
+                    QR)
+                  </td>
+                  <td>
+                    <span class="pill pill-todo">to write</span> harvest from
+                    Midnight Passport’s <code>identity_registry.compact</code>,
+                    which has <em>no</em> ownership gate; ours must
+                  </td>
+                </tr>
+                <tr>
+                  <td>encrypted inbox / DMs</td>
+                  <td>
+                    sealed envelope
+                    <code>version‖suite‖ephemeral-X25519-pk‖AES-256-GCM</code>,
+                    <code>aeadKey = HKDF(X25519(eph, recipient_pk))</code>.
+                    <strong>No contract change, no proving</strong> — off-chain
+                    relay first, on-chain inbox optional later
+                  </td>
+                  <td>
+                    <span class="pill pill-todo">to write</span> near-term;
+                    cheapest privacy win available
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>4.6 Contract hardening required before a real network</h3>
+
+          <p>
+            These are known, recorded holes in the spike-lineage contract — each
+            is a contract intent in its own right:
+          </p>
+
+          <ol>
+            <li>
+              <strong>Per-proposal tallies</strong> instead of two
+              contract-global counters.
+            </li>
+            <li>
+              <strong>Gate <code>addModerator</code></strong> behind a
+              maintenance authority or governance path.
+            </li>
+            <li>
+              <strong>Network ID in nullifier domain separation</strong> —
+              otherwise nullifiers replay across preprod/mainnet.
+            </li>
+            <li>
+              <strong>Front-running of sequential counters</strong>
+              (<code>createCircle</code>, <code>createProposal</code>): our
+              submission queue serialises <em>our</em> transactions only; a
+              public contract accepts anyone’s. Any invariant that relies on the
+              queue is not an invariant.
+            </li>
+            <li>
+              <strong>Maintenance-authority policy</strong> —
+              <code>circuitMaintenanceTx</code> rotates verifier keys and
+              <code>contractMaintenanceTx</code> transfers authority. A
+              “credibly neutral” forum with an upgrade key is only as neutral as
+              the keyholder. Multisig, burn: unpinned.
+            </li>
+            <li><strong>Independent audit</strong> before mainnet.</li>
+          </ol>
+
+          <h3>4.7 Compatibility with Midnight Passport</h3>
+
+          <p>
+            Passport is pre-product, but it is not only demos: much of it is
+            <strong>written specification</strong>, and where a spec exists we
+            should implement <em>it</em> rather than something adjacent to it.
+            Conforming costs us nothing extra — these are circuits we have to
+            write anyway — and it keeps a future handoff or interop story open
+            instead of forking the ecosystem’s identity layer on day one.
+          </p>
+
+          <p>
+            “Passport-compatible” is not one thing, though. Four surfaces, four
+            verdicts:
+          </p>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Surface</th>
+                  <th>What exists</th>
+                  <th>Verdict</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <strong
+                      >VC claim model + revocation + credential status</strong
+                    >
+                    —
+                    <code>midnight-verifiable-credentials/docs/spec/</code> (10
+                    documents, normative MUST/MUST NOT, a written
+                    <code>conformance.md</code> defining conformance categories,
+                    <code>hidden-holder-interoperability.md</code>), plus real
+                    <code>revocation-registry.compact</code> /
+                    <code>status-proof-protocol.compact</code>
+                  </td>
+                  <td>draft spec + prototype contracts</td>
+                  <td>
+                    <strong>Conform.</strong> Highest value, and it settles
+                    §4.4’s decision gate
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong>Encrypted inbox envelope</strong> — 192-byte
+                    container, <code>version=0x01‖suite=0x01</code>, X25519 +
+                    HKDF-SHA256 + AES-256-GCM, info string
+                    <code>midnight:custody:inbox:v1</code>
+                  </td>
+                  <td>byte-level format + reference impl</td>
+                  <td>
+                    <strong>Byte-compatible for free.</strong> We reimplement
+                    the crypto on <code>@noble</code> for Hermes regardless;
+                    keeping the framing means a Passport wallet could one day
+                    read our envelopes
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong
+                      ><code>&lt;handle&gt;.night</code> identity
+                      registry</strong
+                    >
+                  </td>
+                  <td>demo-grade contract (49 lines)</td>
+                  <td>
+                    <strong
+                      >Conform to the shape, diverge on the referent.</strong
+                    >
+                    Theirs binds handle → <em>custody account</em>; we have no
+                    custody account, so ours binds handle → persona /
+                    <code>mn_addr</code>. Their demo also permits
+                    re-registration with no ownership gate — ours must gate it
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong
+                      >Account custody + device-auth (MIP-0012/0013)</strong
+                    >
+                  </td>
+                  <td>
+                    reference contracts +
+                    <strong>passing conformance evidence</strong>
+                  </td>
+                  <td>
+                    <strong>Not now.</strong> Orthogonal to identity-not-funds,
+                    and it is a <strong>JubJub-Schnorr</strong> rail against our
+                    BIP-340/secp256k1 SIWM — a second signing rail, not a
+                    drop-in
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout">
+            <p>
+              <strong>The design tension to keep in view.</strong> Passport’s
+              north star is
+              <em
+                >“scan a QR → a working, human-named account, with no seed
+                phrase / address / gas ever shown”</em
+              >. A human-named account is the <strong>opposite</strong> of an
+              unlinkable persona. The two compose — a named account is exactly
+              our “public” disclosure level (§3.3) — but naming cannot become
+              our universal identity anchor without breaking §1’s load-bearing
+              requirement. Adopt the spec; do not silently adopt the identity
+              model with it.
+            </p>
+          </div>
+
+          <p>
+            <strong>How to conform without taking a dependency.</strong> Pin to
+            the <em>documents and conformance suites</em>, never to their code:
+            there are no releases or tags, the real code sits on branches and
+            PRs (<code>main</code> is an empty template), and every Compact
+            source predates our toolchain (0.31.1) and must be recompiled and
+            re-verified. Conversely, file our own extensions — SIWM,
+            <code>deriveAppSecret</code> — into their MIP pipeline, so
+            divergence surfaces in review rather than at integration.
+          </p>
+
+          <p>
+            Note also that Passport is not the only claimant here:
+            <code>did:midnight</code> is a <strong>third-party</strong> IAMX
+            draft (registered ≠ standardised), Passport itself defines no DID
+            method, and <strong>Midnames</strong> is the de-facto community
+            identity layer with real VC code that is nonetheless unpublished.
+            “Be DID-compatible” is currently ambiguous; “be Midnight-VC-spec
+            conformant” is not.
+          </p>
+
+          <h2 id="s5"><span class="num">5</span>Where it actually stands</h2>
+
+          <p>
+            <strong>Every circuit compiles and proves.</strong> Toolchain
+            compactc 0.31.1, full compile 14.5&nbsp;s.
+          </p>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Circuit</th>
+                  <th>K</th>
+                  <th>Prover key</th>
+                  <th>Proof (desktop, warm)</th>
+                  <th>Proof (native Rust)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>createCircle</code></td>
+                  <td class="num-col">9</td>
+                  <td class="num-col">144 KB</td>
+                  <td class="num-col">31 ms</td>
+                  <td class="num-col">—</td>
+                </tr>
+                <tr>
+                  <td><code>revealVote</code></td>
+                  <td class="num-col">13</td>
+                  <td class="num-col">2.8 MB</td>
+                  <td class="num-col">303 ms</td>
+                  <td class="num-col">~0.41 s</td>
+                </tr>
+                <tr>
+                  <td><code>banJoinNullifier</code></td>
+                  <td class="num-col">13</td>
+                  <td class="num-col">2.8 MB</td>
+                  <td class="num-col">309 ms</td>
+                  <td class="num-col">—</td>
+                </tr>
+                <tr>
+                  <td><code>createProposal</code></td>
+                  <td class="num-col">14</td>
+                  <td class="num-col">5.0 MB</td>
+                  <td class="num-col">563 ms</td>
+                  <td class="num-col">~0.76 s</td>
+                </tr>
+                <tr>
+                  <td><code>joinOpenCircle</code></td>
+                  <td class="num-col">14</td>
+                  <td class="num-col">—</td>
+                  <td class="num-col">—</td>
+                  <td class="num-col">~0.8 s (≈1.0–1.7 s on device)</td>
+                </tr>
+                <tr>
+                  <td><code>joinCircle</code></td>
+                  <td class="num-col">15</td>
+                  <td class="num-col">9.6 MB</td>
+                  <td class="num-col">1,007 ms</td>
+                  <td class="num-col">—</td>
+                </tr>
+                <tr>
+                  <td><code>castVote</code></td>
+                  <td class="num-col">15</td>
+                  <td class="num-col">9.6 MB</td>
+                  <td class="num-col">1,010 ms</td>
+                  <td class="num-col">~1.4 s (≈2.7 s on device)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Verifier keys are 4&nbsp;KB each; total artifacts ~30&nbsp;MB. Peak
+            prover memory 1.09&nbsp;GiB — nowhere near the K≥18 memory wall.
+            <strong>The cryptography was never the risk</strong>, and the
+            measurements settled that.
+          </p>
+
+          <p>
+            <strong>End-to-end, on a real chain:</strong> deploy plus all seven
+            circuits executed as real transactions with real proofs, final
+            ledger state verified through the indexer, 8/8 checks. Per-call wall
+            time 17–19&nbsp;s,
+            <strong>block-time dominated, not proving</strong> — which is
+            exactly why the content plane writes optimistically and chain
+            confirmation arrives asynchronously.
+          </p>
+
+          <p>
+            <strong>On-device:</strong> all four member circuits (join / vote /
+            proposal / reveal) are ported to native Rust and bridged to Android;
+            a device-proven <code>joinOpenCircle</code>
+            <strong>landed on-chain through the real forum UI</strong>. iOS
+            ships key derivation only — the proving C-ABI is not built yet.
+          </p>
+
+          <p>
+            <strong>Prototype product surface:</strong> 4-tab app (Id ·
+            Community · Wallets · Menu), Discord-shaped community rail / channel
+            panel / chat, communities + channels + pinned polls, SIWM sign-in
+            folded into a single biometric unlock, realtime content store, push
+            notifications, passkey-PRF seed recovery, sponsored DUST fees (users
+            hold no funds).
+          </p>
+
+          <h3>Known gaps, each with a named fix</h3>
+
+          <p>
+            This is development-stage work, and the gaps are tracked rather than
+            papered over:
+          </p>
+
+          <ul>
+            <li>
+              An <strong>interim server-side proving path</strong> is still in
+              place. The device rail that replaces it is built and verified;
+              deleting the interim path is a precondition for real users, and is
+              currently waiting on an upstream ledger WASM bug in fee balancing.
+            </li>
+            <li>
+              <strong>Sybil resistance</strong> is exactly what §4.4 exists to
+              fix — today there is nothing beyond rate limiting.
+            </li>
+            <li>
+              <strong>Chat is plaintext to the operator</strong> until sealed
+              envelopes ship (§4.5).
+            </li>
+            <li>
+              The <strong>subject↔persona mapping</strong> held by the content
+              plane should become client-derivable, so the server never stores
+              it at all.
+            </li>
+          </ul>
+
+          <p>
+            None of these are design flaws; all four are recorded, and each has
+            a named fix above.
+          </p>
+
+          <h2 id="s6"><span class="num">6</span>Delivery order</h2>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Phase</th>
+                  <th>Content</th>
+                  <th>State</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="num-col">0</td>
+                  <td>Public forum + Sign-In-With-Midnight</td>
+                  <td><span class="pill pill-ok">done</span></td>
+                </tr>
+                <tr>
+                  <td class="num-col">1</td>
+                  <td>
+                    Personas + on-chain membership, open/invite gates, nullifier
+                    bans, on-device proving
+                  </td>
+                  <td>
+                    <span class="pill pill-ok">done</span>
+                    <span class="pill pill-part">final flip pending</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="num-col">2</td>
+                  <td>
+                    <strong>The credential substrate</strong> —
+                    <code>identityTree</code>, <code>registerCredential</code>,
+                    <code>joinCredentialedCircle</code>, built to the Midnight
+                    VC envelope + status/revocation model (§4.7); DRep and ADA
+                    attestation; deposit gates; per-proposal tallies; contract
+                    hardening
+                  </td>
+                  <td><span class="pill pill-todo">next</span></td>
+                </tr>
+                <tr>
+                  <td class="num-col">3</td>
+                  <td>
+                    Issuers and claim families on top of it — personhood, age
+                    predicates, workplace VCs; full per-community disclosure
+                    levels; identity registry
+                  </td>
+                  <td><span class="pill pill-todo">planned</span></td>
+                </tr>
+                <tr>
+                  <td class="num-col">4</td>
+                  <td>
+                    Multi-option and homomorphic tallies, persona-scoped
+                    reputation with “rep ≥ threshold” proofs, mainnet
+                  </td>
+                  <td><span class="pill pill-todo">planned</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            <em>Resequenced 2026-07-28.</em> Conforming to the VC spec pulls the
+            credential contract surface from Phase 3 into Phase 2: Phase 2 needs
+            a registrar anyway for DRep/ADA attestation, so building it on the
+            conformant shape rather than a bespoke commitment to be migrated
+            later is the cheaper order. Phase 3 keeps the issuers, not the
+            substrate.
+          </p>
+
+          <h2 id="s7"><span class="num">7</span>Why this is worth building</h2>
+
+          <p>
+            The contract is the credibly-neutral backend. No operator owns
+            membership, censors the record, or can de-anonymise a user. And
+            because identity and credentials belong to the
+            <em>wallet</em> rather than to any one forum, the same credential
+            proves you into a different forum’s contract while per-context
+            nullifiers keep the personas unlinkable — and a shared “unique
+            human” or “DRep” registry contract could gate many forums at once,
+            each inheriting Sybil resistance without learning who anyone is.
+          </p>
+
+          <p>
+            That property — a shared identity substrate for the ecosystem’s
+            governance space that nobody has to trust — is the reason to take on
+            ZK proving on a phone. Nobody else ships a forum-shaped product on
+            Midnight; the Merkle-plus-nullifier pattern exists elsewhere only as
+            tutorials.
+          </p>
+
+          <footer>
+            <p>
+              <strong>Working draft, 28 July 2026.</strong> Provisional and
+              subject to change. Figures are measurements from development
+              spikes on local and test networks, not production benchmarks;
+              status markers describe work in progress. Shared for discussion —
+              please do not treat as a specification, a commitment, or a
+              description of a released product.
+            </p>
+          </footer>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

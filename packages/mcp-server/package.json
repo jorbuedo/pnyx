@@ -1,0 +1,31 @@
+{
+  "name": "@pnyx/mcp-server",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./protocol": "./protocol.ts",
+    "./catalogue": "./catalogue.ts",
+    "./types": "./types.ts"
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "clean": "rm -rf dist node_modules/.tmp"
+  },
+  "dependencies": {
+    "@pnyx/cardano-core": "workspace:*",
+    "@pnyx/dapp-connector": "workspace:*",
+    "effect": "3.21.4"
+  },
+  "devDependencies": {
+    "@types/node": "25.0.9",
+    "typescript": "~6.0.3",
+    "vitest": "4.1.10"
+  }
+}

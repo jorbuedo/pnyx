@@ -1,0 +1,378 @@
+// circle.compact — one deploy per circle.
+//
+// Split out of a single combined contract (README, "Why two contracts"), and rewritten
+// against the membership model described there. The spike kept every circle
+// in one contract, which meant reading any circle downloaded all of them, and made three scoping
+// bugs unrepresentable-in-principle but real in practice.
+//
+// **Addressing.** Midnight contract addresses are content-derived — `SHA-256(initial_state, nonce)`
+// with no deployer identity — so a client holding `circleId` and this template computes the address
+// offline. There is no directory, and there is deliberately no on-chain registry: a global map of
+// circles would grow without bound and be downloaded whole, which is the exact anti-pattern this
+// split exists to remove. Discovery of *open* circles is an off-chain index over public deploys.
+//
+// **What the contract identifies.** Sealed `circleId` is what keeps derivations distinct between
+// circles. It matters most for the identity join nullifier: `identitySk` is per-network, not
+// per-circle, so without `circleId` in the hash the same identity joining two circles would publish
+// the same 32 bytes in both, and an observer could link them.
+//
+// **Nothing here grows per action.** Proposals and votes moved to `proposal.compact`, one deploy each
+// (`docs/BOUNDED_STATE_ARCHITECTURE.md` §10). This contract had seven growing structures, two of them
+// growing per *vote* for ever with no compaction — one circle with 1,000 members and 100 proposals was
+// ~200,000 entries, past the readability wall from ordinary use. What is left grows only per **member**:
+// three entries each (leaf, join nullifier, historic root) and nothing per proposal or vote.
+//
+// **Channels and threads are not here, and never will be.** Decided 2026-08-25: they are content-layer
+// only. Threads already work off `Post.parentId`; a channel is a grouping label, and create/rename
+// authority is a **content-plane** check against the circle's founder — the subject that settled this
+// deploy. Not a Merkle read against `moderators`: the service cannot prove leaf membership, which is
+// exactly the gap `moderatorAuth` below closes by letting a moderator sign a request instead. A channel
+// with its own membership would be a contract — deliberately not a launch requirement.
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+/// Fixed at deploy, and part of the address. Distinguishes this circle's derivations from every
+/// other circle's.
+export sealed ledger circleId: Bytes<32>;
+
+/// Whether anyone may join without an invite. Sealed, because a circle silently becoming open is a
+/// membership change no member consented to.
+export sealed ledger isOpen: Boolean;
+
+/// Member personas. A leaf is `personaCommitment(personaSk)` — the contract *is* the circle, so no
+/// circle id is folded in. Historic roots are accepted so a proof survives a concurrent join.
+///
+/// ⚠️ **Root history is now permanent — no circuit resets it.** That reset's only job was stopping a
+/// banned member voting against a stale root, and votes left this contract. Nothing else is harmed by a
+/// stale root: the moderator circuits check the *moderators* tree, and `leaveCircle` against a stale
+/// root re-clears an index that is already clear. Permanence is also what makes a proposal's electorate
+/// **checkable** — a client confirms the root a proposal sealed is a genuine historic root of this
+/// circle, not a creator's tree of sock puppets.
+export ledger members: HistoricMerkleTree<20, Bytes<32>>;
+
+/// Moderator personas, same shape.
+export ledger moderators: HistoricMerkleTree<10, Bytes<32>>;
+
+/// Commitments to unspent invites. Per-invite, not per-circle: the spike hashed one shared secret,
+/// so every joiner produced an identical nullifier and only the first could ever join.
+export ledger invites: Set<Bytes<32>>;
+
+/// Joined-identity nullifiers — an identity may join only once.
+///
+/// ⚠️ **Kept deliberately, and it is not merely one-join-per-identity.** Personas are unlinkable across
+/// joins by construction, so a moderator **cannot recognise a banned person in order to refuse them**,
+/// and an invite handed out in good faith would otherwise readmit them. This set is what makes a ban
+/// mean anything.
+///
+/// The spent-invite set beside it is gone: spending an invite **removes its commitment** from
+/// `invites`, and absence enforces single-use exactly as a nullifier did — a replayer needs the secret,
+/// not the commitment. One grow-for-ever set became a set that shrinks, and `join` lost a
+/// `persistentHash` and a Set op. Re-issuing the same commitment revives that invite, which is what
+/// re-inviting means.
+export ledger joinedIdentities: Set<Bytes<32>>;
+
+/// Auth key per moderator persona — `personaCommitment` -> a public key the content plane verifies a
+/// signature against.
+///
+/// ⚠️ **Appended last, and it must stay last.** Ledger slots are positional and mirrored as hardcoded
+/// indices in `packages/midnight-native/rust/src/preimage.rs`; inserting a field anywhere else
+/// renumbers every slot after it.
+///
+/// **Why the contract holds this at all.** The content plane can read *which leaves* moderate a circle
+/// but not **which session owns one** — that link is the subject-to-persona mapping we deliberately
+/// refuse to record, because binding it at `join` would mean storing it for every member of every
+/// circle. An auth key removes the question instead of protecting it: a moderator signs each request,
+/// the service checks the signature against this map, and stores no link at all.
+///
+/// The contract never verifies a signature — Compact 0.23 cannot (there is no in-circuit signature
+/// check and no `kernel.caller()`). This is storage the *service* reads; the ZK authority is still the
+/// `moderators` tree that gates the write.
+export ledger moderatorAuth: Map<Bytes<32>, Bytes<32>>;
+
+/// The one non-moderator allowed to issue invites — a commitment to a secret its holder proves.
+///
+/// ⚠️ **Appended last (slot 7), and it must stay last.** Same rule as `moderatorAuth` above:
+/// positional slots are mirrored as hardcoded indices in `packages/midnight-native/rust/src/preimage.rs`.
+///
+/// **Why this exists rather than making the attestor a moderator.** Gating a circle on Cardano state
+/// needs an off-chain attestor, and the attestor's output is an invite. The obvious way to let a
+/// service issue one is `addModerator`, and it is wrong twice over: `moderators` is **insert-only** —
+/// no circuit removes a leaf, so the grant would be permanent for the life of the circle — and a
+/// moderator can also ban any member, seat any persona bypassing both nullifiers, and promote further
+/// moderators. A compromised attestor could install moderators nobody can remove.
+///
+/// This is the least privilege that does the job: the holder may insert and remove in `invites`, and
+/// nothing else. `setInviteAuthority` rotates it, and setting it to the zero value withdraws the
+/// delegation outright — which is precisely what a moderator grant cannot do.
+///
+/// ⚠️ **A commitment, not a public key.** Compact 0.23 has no in-circuit signature check and no
+/// `kernel.caller()` (see `moderatorAuth` above), so the only expressible authority is knowledge of a
+/// preimage. The zero value (32 zero bytes) means nobody, and {@link isInviteAuthority} checks that
+/// explicitly rather than relying on no secret hashing to zero.
+export ledger inviteAuthority: Bytes<32>;
+
+witness identitySk(): Bytes<32>;
+witness personaSk(): Bytes<32>;
+witness inviteSecret(): Bytes<32>;
+witness memberPath(leaf: Bytes<32>): MerkleTreePath<20, Bytes<32>>;
+witness moderatorPath(leaf: Bytes<32>): MerkleTreePath<10, Bytes<32>>;
+/// The invite-authority secret, when calling as the authority. A caller who is not it returns
+/// anything; the guard compares the commitment and fails, exactly as a wrong `moderatorPath` does.
+witness inviteAuthoritySk(): Bytes<32>;
+
+circuit personaCommitment(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "pnyx:pc"), sk]);
+}
+
+/// One join per identity, without ever naming the identity. `C = H("pnyx:id", identitySk)` and
+/// this are different one-way functions of the same secret, so linking them means brute-forcing 32
+/// bytes. `circleId` keeps it unlinkable across circles.
+///
+/// This is what makes a ban permanent: to act you need a leaf, leaves enter only by joining, and a
+/// second persona would need a second join. It holds against a modified client choosing arbitrary
+/// personas, because `personaSk`'s derivation is a client convention and this nullifier is not.
+circuit identityJoinNullifier(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([pad(32, "pnyx:jni"), circleId, sk]);
+}
+
+/// Prove I am a member. Discloses only the root — the one primitive Midnight offers that gives
+/// membership without identity, which is why every anonymity property here routes through it.
+circuit requireMember(leaf: Bytes<32>): [] {
+  assert(members.checkRoot(disclose(merkleTreePathRoot<20, Bytes<32>>(memberPath(leaf)))), "not a member");
+}
+
+circuit requireModerator(): Bytes<32> {
+  const leaf = personaCommitment(personaSk());
+  assert(moderators.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(moderatorPath(leaf)))), "not a moderator");
+  return leaf;
+}
+
+/// The invite authority's commitment. Its own domain tag, so the same secret used as a persona
+/// somewhere else cannot be replayed as an authority — the rule every derivation here follows.
+circuit inviteAuthorityCommitment(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "pnyx:ia"), sk]);
+}
+
+/// Am I the invite authority?
+///
+/// ⚠️ The zero check is not redundant. A circle that never delegated has `inviteAuthority` at its
+/// zero value, and without this a caller who found *any* preimage of zero would be its authority.
+/// Cheap to check and the consequence of being wrong is the whole gate.
+circuit isInviteAuthority(): Boolean {
+  const authority = inviteAuthority;
+  const claimed = inviteAuthorityCommitment(inviteAuthoritySk());
+  // `pad(32, "")` is 32 zero bytes — the codebase's idiom for the empty value (`setMember` clears a
+  // leaf with the same expression). `default<Bytes<32>>()` does not parse here in 0.23.
+  return authority != pad(32, "") && disclose(claimed) == authority;
+}
+
+/// `founderAuth` is seated here rather than left for `addModerator` because the founder is the circle's
+/// only initial moderator: they could not call `addModerator` on themselves before this seated them as
+/// a member, and a founder with no auth key is a moderator the content plane cannot authenticate.
+///
+/// **The founder is seated as a member too, and that is what makes a gated circle creatable at all.**
+/// Membership entered only by `join`, which on a gated circle asserts `invites.member(...)` — so a
+/// founder had to issue an invite to themselves and redeem it, three transactions to create one
+/// circle, and until they did they moderated a community they could not post in. Seating them here
+/// makes creation one transaction for every circle, gated or not.
+///
+/// ⚠️ `founderJoined` is `identityJoinNullifier(identitySk)` computed **off-chain**: a constructor is
+/// not a circuit and has no witnesses, so the value arrives as a public argument. Seating the leaf
+/// without it would leave the founder able to `join` again later and hold two member leaves, which is
+/// exactly what that set exists to prevent. It discloses nothing new — `join` publishes the same 32
+/// bytes, and for a founder that happened in the very next transaction.
+constructor(id: Bytes<32>, open: Boolean, founder: Bytes<32>, founderAuth: Bytes<32>, founderJoined: Bytes<32>) {
+  circleId = disclose(id);
+  isOpen = disclose(open);
+  members.insert(disclose(founder));
+  moderators.insert(disclose(founder));
+  joinedIdentities.insert(disclose(founderJoined));
+  moderatorAuth.insert(disclose(founder), disclose(founderAuth));
+}
+
+/// Issue or withdraw an invite. Moderator-gated, and the commitment hides the secret until someone
+/// redeems it; per-invite commitments rather than one circle-wide secret are what make revocation
+/// possible at all.
+///
+/// One circuit rather than two because a contract's deploy carries one verifier key per entry point
+/// and every key is the same 2,119 bytes whatever the circuit does — so the entry-point *count* is
+/// what a deploy costs, and eleven of them do not fit in a block (README, "Measured"). `active` is a
+/// public argument and both operations were already
+/// public ledger writes, so nothing is hidden that was visible before.
+export circuit setInvite(commitment: Bytes<32>, active: Boolean): [] {
+  requireModerator();
+  const c = disclose(commitment);
+  const on = disclose(active);
+  // Guarded rather than branched: `remove` on an absent key is what a revocation of nothing would
+  // be, and saying so is the whole point of the check.
+  assert(on || invites.member(c), "no such invite");
+  if (on) {
+    invites.insert(c);
+  } else {
+    invites.remove(c);
+  }
+}
+
+/// Issue or withdraw an invite **as the delegated authority**, not as a moderator.
+///
+/// The body is `setInvite`'s; only the gate differs. That is a deliberate duplication rather than a
+/// mode argument on `setInvite`, and the reasoning is worth keeping because the house rule points
+/// the other way (merging is free in verifier-key size, so prefer it):
+///
+/// - **A merged guard would have to re-port `setInvite`.** Its transcript is already ported and
+///   proving; changing it means redoing the work whose last outing failed as *"Public transcript
+///   input mismatch for input 23"*, naming neither op nor cause. A new circuit is a new port and
+///   breaks nothing that works.
+/// - **A merged guard costs the device a K step.** Evaluating both predicates took `setInvite` from
+///   K13 to K14 — measured, 2.83 MB to 4.98 MB of prover key that every founder downloads. This way
+///   `setInvite` stays K13 and only the service pays for `issueInvite`.
+/// - **A merged guard needs a dummy `moderatorPath`.** The authority is not in `moderators`, so the
+///   witness would have to fabricate a path rather than throw — and that throw is what currently
+///   turns "you are not a moderator" into a sentence instead of a proof failure about roots.
+///
+/// The cost is one more entry point: 7, against upstream's advice of 5–7 and far from the eleven
+/// that did not fit in a block.
+export circuit issueInvite(commitment: Bytes<32>, active: Boolean): [] {
+  assert(isInviteAuthority(), "not the invite authority");
+  const c = disclose(commitment);
+  const on = disclose(active);
+  assert(on || invites.member(c), "no such invite");
+  if (on) {
+    invites.insert(c);
+  } else {
+    invites.remove(c);
+  }
+}
+
+/// Delegate invite issuance, rotate the delegate, or withdraw it.
+///
+/// Moderator-gated, so the circle's own moderators decide who speaks for it — and because this is the
+/// only writer, the delegation is **revocable**: `setInviteAuthority(zero)` ends it in one call.
+/// That is the whole reason this exists instead of `addModerator(attestor)`, which grants a strictly
+/// larger power that no circuit can ever take back (see `inviteAuthority`).
+///
+/// A single value rather than a set: one delegate per circle is what the attestation design needs, and
+/// a set would want removal semantics, an entry point to express them, and a reason to prefer it that
+/// nothing has yet. `Bytes<32>` is a public argument because a commitment is not a secret.
+export circuit setInviteAuthority(authority: Bytes<32>): [] {
+  requireModerator();
+  inviteAuthority = disclose(authority);
+}
+
+/// Promote a member to moderator, recording the auth key the content plane will check their
+/// signatures against. Both writes are public and the key is a public argument — a moderator's auth
+/// key is not a secret, and pairing it with the leaf here is what lets the service authenticate a
+/// moderator without ever learning which member they are.
+export circuit addModerator(leaf: Bytes<32>, authPub: Bytes<32>): [] {
+  requireModerator();
+  requireMember(disclose(leaf));
+  moderators.insert(disclose(leaf));
+  moderatorAuth.insert(disclose(leaf), disclose(authPub));
+}
+
+/// Join. An open circle needs nothing; a gated one needs an unspent invite. Either way this identity
+/// may join only once — the gate that stops a banned user walking back in.
+///
+/// One circuit rather than two, and the branch is on `isOpen`, which is a **public sealed ledger
+/// cell**: an observer already knew which of the two paths any given circle admits people by, so
+/// merging them hides nothing and reveals nothing. (Contrast the vote pair, which stays two circuits
+/// because commit and reveal must be two *transactions* for the ballot to be secret at all.)
+export circuit join(): [] {
+  const open = isOpen;
+  const secret = inviteSecret();
+  const commitment = persistentHash<Vector<2, Bytes<32>>>([pad(32, "pnyx:invite"), secret]);
+  // Guarded rather than branched, so an open circle never consults the invite registry and a gated
+  // one cannot skip it. `inviteSecret()` is still evaluated on the open path — the witness returns
+  // an unused value there, which nothing reads.
+  assert(open || invites.member(disclose(commitment)), "no such invite");
+  const joined = identityJoinNullifier(identitySk());
+  assert(!joinedIdentities.member(disclose(joined)), "identity already joined");
+  // Single-use by **absence**, not by a nullifier: removing the commitment is what spends the invite,
+  // and a replayer needs the secret rather than the commitment.
+  if (!open) {
+    invites.remove(disclose(commitment));
+  }
+  joinedIdentities.insert(disclose(joined));
+  members.insert(disclose(personaCommitment(personaSk())));
+}
+
+/// Ban a member by **removing their leaf**, so there is nothing left to prove membership with. They
+/// can neither author nor vote, and cannot rejoin because their identity nullifier is spent.
+///
+/// Soundness comes from rebuilding the index out of the *same path that was verified*: a
+/// `MerkleTreePathEntry` carries `goes_left`, so the direction bits encode the position. The slot
+/// cleared is provably the slot proved, and a moderator cannot aim at an arbitrary index.
+///
+/// Merged with reinstatement rather than kept as two entry points: a deploy carries one verifier key
+/// per entry point and each is the same 2,119 bytes whatever the circuit does, so the count is what
+/// costs (README, "Measured"). `member` is public and both operations already wrote the
+/// public tree, so nothing became less visible.
+///
+/// ⚠️ Reinstatement is also an unrestricted "add member" power: it bypasses the invite and identity
+/// nullifiers, so a moderator can seat any persona. That is deliberate — moderators can already mint
+/// invites — but it means one identity could hold two leaves if reinstated after joining again, and
+/// the power should be surfaced as such in any moderator UI.
+export circuit setMember(leaf: Bytes<32>, member: Boolean): [] {
+  requireModerator();
+  const target = disclose(leaf);
+  const keep = disclose(member);
+  if (keep) {
+    members.insert(target);
+    return [];
+  }
+  const p = memberPath(target);
+  assert(members.checkRoot(disclose(merkleTreePathRoot<20, Bytes<32>>(p))), "not a member");
+  const idx = ((((((((((((((((((((0
+    * 2 + (p.path[19].goes_left ? 0 : 1))
+    * 2 + (p.path[18].goes_left ? 0 : 1))
+    * 2 + (p.path[17].goes_left ? 0 : 1))
+    * 2 + (p.path[16].goes_left ? 0 : 1))
+    * 2 + (p.path[15].goes_left ? 0 : 1))
+    * 2 + (p.path[14].goes_left ? 0 : 1))
+    * 2 + (p.path[13].goes_left ? 0 : 1))
+    * 2 + (p.path[12].goes_left ? 0 : 1))
+    * 2 + (p.path[11].goes_left ? 0 : 1))
+    * 2 + (p.path[10].goes_left ? 0 : 1))
+    * 2 + (p.path[9].goes_left ? 0 : 1))
+    * 2 + (p.path[8].goes_left ? 0 : 1))
+    * 2 + (p.path[7].goes_left ? 0 : 1))
+    * 2 + (p.path[6].goes_left ? 0 : 1))
+    * 2 + (p.path[5].goes_left ? 0 : 1))
+    * 2 + (p.path[4].goes_left ? 0 : 1))
+    * 2 + (p.path[3].goes_left ? 0 : 1))
+    * 2 + (p.path[2].goes_left ? 0 : 1))
+    * 2 + (p.path[1].goes_left ? 0 : 1))
+    * 2 + (p.path[0].goes_left ? 0 : 1)) as Uint<64>;
+  members.insertIndex(pad(32, ""), disclose(idx));
+}
+
+/// Leave voluntarily. The same removal as a ban, self-authorised: prove you hold the persona rather
+/// than that you moderate.
+export circuit leaveCircle(): [] {
+  const leaf = personaCommitment(personaSk());
+  const p = memberPath(leaf);
+  assert(members.checkRoot(disclose(merkleTreePathRoot<20, Bytes<32>>(p))), "not a member");
+  const idx = ((((((((((((((((((((0
+    * 2 + (p.path[19].goes_left ? 0 : 1))
+    * 2 + (p.path[18].goes_left ? 0 : 1))
+    * 2 + (p.path[17].goes_left ? 0 : 1))
+    * 2 + (p.path[16].goes_left ? 0 : 1))
+    * 2 + (p.path[15].goes_left ? 0 : 1))
+    * 2 + (p.path[14].goes_left ? 0 : 1))
+    * 2 + (p.path[13].goes_left ? 0 : 1))
+    * 2 + (p.path[12].goes_left ? 0 : 1))
+    * 2 + (p.path[11].goes_left ? 0 : 1))
+    * 2 + (p.path[10].goes_left ? 0 : 1))
+    * 2 + (p.path[9].goes_left ? 0 : 1))
+    * 2 + (p.path[8].goes_left ? 0 : 1))
+    * 2 + (p.path[7].goes_left ? 0 : 1))
+    * 2 + (p.path[6].goes_left ? 0 : 1))
+    * 2 + (p.path[5].goes_left ? 0 : 1))
+    * 2 + (p.path[4].goes_left ? 0 : 1))
+    * 2 + (p.path[3].goes_left ? 0 : 1))
+    * 2 + (p.path[2].goes_left ? 0 : 1))
+    * 2 + (p.path[1].goes_left ? 0 : 1))
+    * 2 + (p.path[0].goes_left ? 0 : 1)) as Uint<64>;
+  members.insertIndex(pad(32, ""), disclose(idx));
+}

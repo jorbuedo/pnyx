@@ -1,0 +1,8 @@
+appId: uk.pxkq.pnyx.dev
+---
+- tapOn:
+    id: "tab-card"
+- waitForAnimationToEnd:
+    timeout: 4000
+- takeScreenshot:
+    path: /tmp/proto-diff/card-tab

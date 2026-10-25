@@ -1,0 +1,67 @@
+{
+  "name": "@pnyx/storage",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./browser-extension": {
+      "types": "./dist/browser-extension.d.ts",
+      "default": "./dist/browser-extension.js"
+    },
+    "./mmkv": {
+      "react-native": {
+        "types": "./dist/mmkv.native.d.ts",
+        "default": "./dist/mmkv.native.js"
+      },
+      "types": "./dist/mmkv.d.ts",
+      "default": "./dist/mmkv.js"
+    },
+    "./platform": {
+      "react-native": {
+        "types": "./dist/platform.native.d.ts",
+        "default": "./dist/platform.native.js"
+      },
+      "types": "./dist/platform.d.ts",
+      "default": "./dist/platform.js"
+    },
+    "./web": {
+      "types": "./dist/web.d.ts",
+      "default": "./dist/web.js"
+    },
+    "./memory": {
+      "types": "./dist/memory.d.ts",
+      "default": "./dist/memory.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "clean": "rm -rf dist node_modules/.tmp"
+  },
+  "dependencies": {
+    "effect": "3.21.4"
+  },
+  "peerDependencies": {
+    "react-native-mmkv": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react-native-mmkv": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@effect/vitest": "0.27.0",
+    "@types/node": "25.0.9",
+    "typescript": "~6.0.3",
+    "vitest": "4.1.10"
+  }
+}

@@ -1,0 +1,12 @@
+# Maestro test artifacts
+.env
+!.env.example
+*.log
+
+# Reports folder (keep .gitkeep only)
+reports/*
+!reports/.gitkeep
+
+# Screenshots folder (keep .gitkeep only)
+screenshots/*
+!screenshots/.gitkeep

@@ -1,0 +1,60 @@
+# Utility: Base init flow (ToS, analytics, PIN, biometric skip)
+#
+# Common steps for first-time app launch:
+# 1. Accept Terms of Service
+# 2. Skip analytics consent
+# 3. Set up PIN code
+# 4. Skip biometric setup (handles auto-skip on simulators)
+#
+# After this flow, the app is on the new-or-return screen.
+# Use accept-terms.yaml or accept-terms-new-user.yaml for complete flows.
+
+appId: ${MAESTRO_APP_ID}
+---
+# === STEP 1: Terms of Service ===
+# Wait for the init screen to load
+- extendedWaitUntil:
+    visible:
+      id: "buttonContinue"
+    timeout: 10000
+
+# Tap the ToS acceptance checkbox
+- waitForAnimationToEnd
+- tapOn:
+    id: "checkboxSelect"
+
+# Continue to next screen
+- tapOn:
+    id: "buttonContinue"
+
+# === STEP 2: Analytics Consent ===
+# Wait for analytics screen
+- extendedWaitUntil:
+    visible:
+      id: "analytics-skip-button"
+    timeout: 10000
+
+# Skip analytics
+- tapOn:
+    id: "analytics-skip-button"
+
+# === STEP 3: PIN Setup ===
+- runFlow: ./setup-pin.yaml
+
+# === STEP 4: Biometric Setup (may be skipped automatically) ===
+# The biometric screen auto-skips if hardware is unavailable (common in simulators).
+# We wait for the new-or-return screen, which appears in both cases:
+# - If biometrics unavailable: auto-navigates directly
+# - If biometrics available: we skip it manually first
+
+# Wait for animations to settle after PIN setup
+- waitForAnimationToEnd
+
+# Case A: Biometric screen is showing - skip it
+- runFlow:
+    when:
+      visible:
+        id: "biometric-skip-button"
+    commands:
+      - tapOn:
+          id: "biometric-skip-button"

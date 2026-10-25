@@ -1,0 +1,275 @@
+// payment.compact — one deploy, global, and the only contract here that can never be replaced.
+//
+// `handle.compact`'s `bind` accepts a permit of colour `tokenType(permitDomain(tier), payment)`, where
+// `payment` is **this contract's address**, sealed into every handle template. So a successor mints
+// colours the frozen template will not accept, and pre-deploying spare generations does not help —
+// their code would have to be written today. Everything below is chosen with that in mind: what the
+// *code* can do is frozen forever, so the code has to be the part that never needs to change.
+//
+// **The currency is state, not code.** `prices` is a map behind `setPrice`, so which currencies are
+// accepted, and at what price, changes at any time without a redeploy. What cannot change is which
+// receive primitive a purchase circuit calls — `receiveUnshielded` and `receiveShielded` are different
+// primitives, and a contract carrying only one can never take a currency on the other however many
+// `setPrice` calls follow. That is the reason both rails exist here rather than the one we expect to
+// launch with (`docs/BOUNDED_STATE_ARCHITECTURE.md` §3.3).
+//
+// **The treasury forwards; it does not hold.** A contract that banks its takings publishes its float —
+// OpenZeppelin's `ShieldedTreasury` documents exactly that, and "shielded" there names the token rail,
+// not the balance. Forwarding in the same circuit removes both the public float and `sweep()`, at the
+// cost of pinning the treasury at construction (§3.4.2). `bricktowers/midnight-identity`'s shop does
+// the same in two lines, so the shape has prior art on chain rather than only in a design note.
+//
+// **Authority is a rotatable commitment, not a frozen one.** Midnight has no in-circuit signature
+// check and Compact 0.23 does not expose the ledger's authenticated caller (`kernel.caller()` is
+// undefined, and `ownPublicKey()` is prover-controlled — the docs warn against it explicitly). So the
+// authority is a hash preimage, which is what OpenZeppelin's `Ownable` does too. The part that matters
+// is that `adminAuth` is **mutable**: `rotateAdmin` moves it, so a leaked secret is recoverable. An
+// earlier draft sealed it, which put it in the address and made a leak permanent for no benefit —
+// `ZOwnablePK` seals the instance *salt* and leaves the authority mutable, and that is the right split.
+//
+// ⚠️ **An unshielded permit can be minted *to a third party* with nothing but their address; a
+// shielded one cannot.** A shielded recipient here is a `ZswapCoinPublicKey` — half of a shielded
+// address. The other half, the encryption key, is what a transaction builder needs to attach the
+// ciphertext that lets the recipient find the coin by scanning, and it appears nowhere in the
+// circuit. A builder holding the recipient's *full* shielded address can supply it and the coin is
+// found normally; a builder holding only what this contract can express cannot, and the coin is
+// stranded. That asymmetry is what forced "every mint names its caller" on the shielded design.
+// Unshielded tokens are ledger UTxOs with nothing to scan for and no second key to exchange, so a
+// grant to someone else is plainly deliverable. `grantPermit` therefore takes a recipient, and
+// choosing the unshielded rail is what buys that back.
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+/// Where an **unshielded** purchase is forwarded, in the same circuit that receives it. Sealed, so it
+/// is part of this contract's address and cannot be repointed by anyone who later learns `adminAuth`.
+export sealed ledger treasury: Either<ContractAddress, UserAddress>;
+
+/// Where a **shielded** purchase is forwarded.
+///
+/// ⚠️ A second field rather than a second use of the first, because the two rails address recipients
+/// with **disjoint types**: `sendUnshielded` takes `Either<ContractAddress, UserAddress>` and
+/// `sendImmediateShielded` takes `Either<ZswapCoinPublicKey, ContractAddress>`. There is no one value
+/// that names the treasury on both rails. Sealed and free — a ledger field costs no entry point.
+export sealed ledger shieldedTreasury: Either<ZswapCoinPublicKey, ContractAddress>;
+
+/// `persistentHash(["pnyx:admin", grantSecret])`. **Mutable** — `rotateAdmin` is the recovery path,
+/// and the reason this is not `sealed`.
+///
+/// ⚠️ Rotation limits the *window*, not the damage: a leak still mints permits and reprices tiers until
+/// we notice, and names claimed cheap in that window stay claimed. It also loses a race to an attacker
+/// who rotates first. Neither is a reason to freeze it — a frozen secret loses that race permanently.
+///
+/// ⚠️ Its initial value comes from the constructor and so lands in this contract's address. That is why
+/// the deploy script must generate it with a CSPRNG and refuse a low-entropy value: the preprod deploy
+/// used `bytes32(0x5a)` and the preimage fell out of the public hash in 3.8 ms.
+export ledger adminAuth: Bytes<32>;
+
+/// `(tier, currency) -> price`. The whole of the currency policy, and the only growing structure in
+/// this contract — bounded by tiers x currencies, which we choose, rather than by usage.
+///
+/// A purchase records **nothing**: permit double-spend is Zswap's and the ledger's problem, not ours,
+/// so there is no nullifier set to accumulate and this contract does not grow with use.
+export ledger prices: Map<Bytes<32>, Uint<128>>;
+
+/// The preimage of `adminAuth`.
+witness grantSecret(): Bytes<32>;
+
+/// The preimage `rotateAdmin` installs. Supplied as a witness rather than a parameter so a rotation
+/// never puts the incoming secret in a transaction — only its hash reaches the chain.
+witness nextAdminSecret(): Bytes<32>;
+
+/// One permit colour per **tier**, not per name and not one for everything. Per-name pricing would need
+/// a map keyed by name — the growing structure this whole design exists to remove — and a single colour
+/// forecloses tiered pricing outright (§3.4).
+circuit permitDomain(tier: Uint<8>): Bytes<32> {
+  return tier == 0 ? pad(32, "pnyx:permit:t0") :
+         tier == 1 ? pad(32, "pnyx:permit:t1") :
+         tier == 2 ? pad(32, "pnyx:permit:t2") :
+         tier == 3 ? pad(32, "pnyx:permit:t3") :
+         tier == 4 ? pad(32, "pnyx:permit:t4") :
+         tier == 5 ? pad(32, "pnyx:permit:t5") : pad(32, "pnyx:permit:t6");
+}
+
+/// The per-name transfer capability `rebind` spends. Minted on request and never purchasable: pricing
+/// it per name needs a per-name map, and making it purchasable reopens snipe-and-resell.
+circuit rebindDomain(name: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "pnyx:rebind"), name]);
+}
+
+/// The per-**name** moderation capability that `handle.compact`'s `moderate` spends.
+///
+/// Per name rather than one token for the namespace, so a stolen one silences a single name instead of
+/// all of them. And minted *here* rather than gated by a secret in the handle template, because there
+/// is one handle contract per name: a per-handle authority could only be rotated one transaction per
+/// name, whereas this makes the whole namespace's moderation authority rotate with `rotateAdmin` alone.
+/// A frozen template can compute this colour; it could never read a mutable field out of this contract.
+circuit moderateDomain(name: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "pnyx:moderate"), name]);
+}
+
+/// What `prices` is keyed by. Domain-separated so a colour can never collide with a tier domain, which
+/// would let a currency's own colour name a price row.
+circuit priceKey(tier: Uint<8>, color: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([pad(32, "pnyx:price"), permitDomain(tier), color]);
+}
+
+/// The colour a **free** tier's row is written under.
+///
+/// Free is a currency, which is what keeps the admin surface at zero new circuits: `setPrice` already
+/// adds and removes rows, so `setPrice(tier, freeColor(), 1)` opens a free tier and
+/// `setPrice(tier, freeColor(), 0)` closes it. ⚠️ The row's *amount* is never read — only its presence
+/// — so the 1 is a placeholder, not a price.
+///
+/// It cannot collide with a real currency: a currency colour is a token type, and this is a domain hash
+/// nobody can mint under.
+circuit freeColor(): Bytes<32> {
+  return pad(32, "pnyx:free");
+}
+
+circuit adminCommitment(secret: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "pnyx:admin"), secret]);
+}
+
+circuit requireAdmin(): [] {
+  assert(adminCommitment(grantSecret()) == adminAuth, "not authorised");
+}
+
+constructor(
+  pay: Either<ContractAddress, UserAddress>,
+  shieldedPay: Either<ZswapCoinPublicKey, ContractAddress>,
+  admin: Bytes<32>,
+) {
+  treasury = disclose(pay);
+  shieldedTreasury = disclose(shieldedPay);
+  adminAuth = disclose(admin);
+}
+
+/// Hand admin authority to a new secret. The recovery path, and the whole reason `adminAuth` is not
+/// sealed: without it a single leak would be permanent on the one contract that can never be replaced.
+///
+/// The incoming secret is a witness, so only its commitment is ever published — the same property
+/// `Ownable.transferOwnership` gets by taking the new owner's *id* rather than their key.
+export circuit rotateAdmin(): [] {
+  requireAdmin();
+  adminAuth = disclose(adminCommitment(nextAdminSecret()));
+}
+
+/// Add, remove or reprice any currency for any tier, at any time. A price of zero removes the row,
+/// which is how a currency stops being accepted without the code knowing it ever was.
+///
+/// This is the circuit that makes the launch currency a decision we do not have to take today.
+export circuit setPrice(tier: Uint<8>, color: Bytes<32>, price: Uint<128>): [] {
+  requireAdmin();
+  const key = priceKey(disclose(tier), disclose(color));
+  // Disclosed up front: branching on it is itself a disclosure of the comparison's result, so the
+  // compiler refuses the `if` otherwise. Nothing here is private — a price list is public by design.
+  const amount = disclose(price);
+  if (amount == 0) {
+    assert(prices.member(key), "no such price");
+    prices.remove(key);
+  } else {
+    prices.insert(key, amount);
+  }
+}
+
+/// Buy a permit with an **unshielded** currency, and forward the payment in the same circuit.
+///
+/// The expected rail at launch: bridged USDM lands unshielded, and it is the only stablecoin on this
+/// chain a contract can actually reach — ShieldUSD is a shielded *contract* token, and contract-to-
+/// contract calls do not exist on our pinned toolchain. What it costs is privacy, not feasibility: an
+/// unshielded payment puts payer, payee and amount in the clear.
+export circuit buyPermitUnshielded(
+  tier: Uint<8>,
+  color: Bytes<32>,
+  recipient: Either<ContractAddress, UserAddress>,
+): [] {
+  const t = disclose(tier);
+  const currency = disclose(color);
+  const key = priceKey(t, currency);
+  assert(prices.member(key), "currency not accepted for this tier");
+  const price = prices.lookup(key);
+  receiveUnshielded(currency, price);
+  sendUnshielded(currency, price, treasury);
+  mintUnshieldedToken(permitDomain(t), 1, disclose(recipient));
+}
+
+/// Buy a permit with a **shielded** currency, forwarding the coin in the same circuit.
+///
+/// Nothing we can accept today needs this. It exists because the choice of receive primitive is frozen
+/// code where the choice of currency is mutable state — a purchase circuit with only the unshielded
+/// rail could never take a shielded currency, on the one contract that can never be redeployed. The
+/// coin arrives in this transaction and so has no Merkle index, which is why the forward is
+/// `sendImmediateShielded` rather than `sendShielded`.
+export circuit buyPermitShielded(
+  tier: Uint<8>,
+  coin: ShieldedCoinInfo,
+  recipient: Either<ContractAddress, UserAddress>,
+): [] {
+  const paid = disclose(coin);
+  const t = disclose(tier);
+  const key = priceKey(t, paid.color);
+  assert(prices.member(key), "currency not accepted for this tier");
+  assert(paid.value >= prices.lookup(key), "payment below price");
+  receiveShielded(paid);
+  sendImmediateShielded(paid, shieldedTreasury, paid.value);
+  mintUnshieldedToken(permitDomain(t), 1, disclose(recipient));
+}
+
+/// Mint a claim permit for free, to anyone. Reserved names, airdrops and support cases.
+///
+/// ⚠️ Takes a recipient, and that is only sound because the permit is **unshielded**. A shielded grant
+/// would need the recipient's encryption key — the half of a shielded address this contract's
+/// `ZswapCoinPublicKey` cannot carry — exchanged out of band before the mint, or the coin is stranded.
+/// That is why the shielded design had to mint to the caller and hand the grant over as an ordinary
+/// transfer.
+export circuit grantPermit(tier: Uint<8>, recipient: Either<ContractAddress, UserAddress>): [] {
+  requireAdmin();
+  mintUnshieldedToken(permitDomain(disclose(tier)), 1, disclose(recipient));
+}
+
+/// Mint a permit for a tier the admin has opened to everyone, for nothing.
+///
+/// **The point is a wallet with nothing in it.** A price — even a nominal one — cannot be paid by someone
+/// who has just installed the app, and that is exactly who needs a name. `grantPermit` mints for nothing
+/// too, but only for whoever holds `adminAuth`: a faucet service, and a secret on a server that mints
+/// permits and reprices every tier if it leaks. This needs no secret at all.
+///
+/// ⚠️ **Deliberately unbounded, and it records nothing.** No nullifier, no claimant set, no per-caller
+/// state: anyone may call this as often as they like while the row is open. Two reasons, and the second
+/// is the one that decided it:
+///
+/// 1. A free tier is a **long-name** tier by construction — t6 is 23 to 31 bytes, which is more names
+///    than anyone can exhaust — so squatting it costs the squatter and denies nobody.
+/// 2. Bounding it means remembering who claimed, and this is the one contract that **must not grow with
+///    use**: it is deployed once and can never be replaced, so anything accumulating here accumulates
+///    for the life of the namespace. A once-per-identity set was written and then deleted for exactly
+///    that reason — it also bought no Sybil resistance, since an identity is a seed.
+///
+/// So the admin's lever is the row: `setPrice(tier, freeColor(), 1)` opens a giveaway and a price of
+/// zero ends it. Which tiers are free is a decision, revisited whenever, and never a property of code.
+export circuit claimFreePermit(tier: Uint<8>, recipient: Either<ContractAddress, UserAddress>): [] {
+  const t = disclose(tier);
+  // Presence, not amount: a free row says "this tier is free", and `setPrice` is what writes it.
+  assert(prices.member(priceKey(t, freeColor())), "this tier is not free");
+  mintUnshieldedToken(permitDomain(t), 1, disclose(recipient));
+}
+
+/// Mint the per-name transfer capability `handle.compact`'s `rebind` spends.
+export circuit grantRebindPermit(name: Bytes<32>, recipient: Either<ContractAddress, UserAddress>): [] {
+  requireAdmin();
+  mintUnshieldedToken(rebindDomain(disclose(name)), 1, disclose(recipient));
+}
+
+/// Mint the per-name moderation capability `handle.compact`'s `moderate` spends. Reusable — `moderate`
+/// takes it back — so one mint serves that name for ever and a ban is not rationed by a mint.
+///
+/// ⚠️ The only authority here whose theft is **reversible**: `moderate` writes `banned` and has no
+/// `owner` parameter, so a stolen mod token can silence a name and never take one.
+export circuit grantModeratePermit(
+  name: Bytes<32>,
+  recipient: Either<ContractAddress, UserAddress>,
+): [] {
+  requireAdmin();
+  mintUnshieldedToken(moderateDomain(disclose(name)), 1, disclose(recipient));
+}
